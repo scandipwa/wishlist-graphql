@@ -1,0 +1,17 @@
+
+# ScandiPWA - Progressive Web App for Magento
+#
+# Copyright © Scandiweb, Inc. All rights reserved.
+# See LICENSE for license details.
+#
+# @license OSL-3.0 (Open Software License ("OSL") v. 3.0)
+# @package scandipwa/wishlist-graphql
+# @link https://github.com/scandipwa/wishlist-graphql
+#
+# Copyright © Magento, Inc. All rights reserved.
+# See COPYING.txt for license details.
+
+type Mutation {
+    addProductToWishlist(productSku: String!): WishlistItem @resolver(class:"\\ScandiPWA\\WishlistGraphQl\\Model\\Resolver\\AddProductToWishlist")
+    removeProductFromWishlist(itemId: String!): Boolean @resolver(class:"\\ScandiPWA\\WishlistGraphQl\\Model\\Resolver\\RemoveProductFromWishlist")
+}
