@@ -14,4 +14,6 @@
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
     <preference for="Magento\WishlistGraphQl\Model\Resolver\WishlistResolver"
                 type="ScandiPWA\WishlistGraphQl\Model\Resolver\WishlistResolver"/>
+    <preference for="Magento\WishlistGraphQl\Model\Resolver\WishlistItemsResolver"
+                type="ScandiPWA\WishlistGraphQl\Model\Resolver\WishlistItemsResolver"/>
 </config>

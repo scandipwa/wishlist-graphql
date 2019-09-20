@@ -78,12 +78,10 @@ class AddProductToWishlist implements ResolverInterface
             throw new GraphQlAuthorizationException(__('Authorization unsuccessful'));
         }
 
-        [
-            'sku' => $sku,
-            'quantity' => $quantity,
-            'description' => $description,
-            'product_option' => $productOption,
-        ] = $args['wishlistItem'];
+        ['sku' => $sku] = $args['wishlistItem'];
+        $quantity = $args['wishlistItem']['quantity'] ?? 1;
+        $description = $args['wishlistItem']['description'] ?? '';
+        $productOption = $args['wishlistItem']['product_option'];
 
         if (!isset($sku)) {
             throw new GraphQlInputException(__('Please specify valid product'));
@@ -105,14 +103,16 @@ class AddProductToWishlist implements ResolverInterface
                 throw new GraphQlInputException(__('Product has already been added to wishlist'));
             }
 
-            $wishlistItem = $wishlist->addNewItem($product);
+            $buyRequest = [];
+            if ($product->getTypeId() === Configurable::TYPE_CODE) {
+                $configurableOptions = $this->getOptionsArray($productOption['extension_attributes']['configurable_item_options']);
+                $buyRequest['super_attribute'] = $configurableOptions;
+            }
+
+            $wishlistItem = $wishlist->addNewItem($product, $buyRequest);
             $wishlistItem->setDescription($description);
             $wishlistItem->setQty($quantity);
 
-            if ($product->getTypeId() === Configurable::TYPE_CODE) {
-                $configurableOptions = $this->getOptionsArray($productOption['extension_attributes']['configurable_item_options']);
-                $wishlistItem->setOptions($configurableOptions);
-            }
 
             $wishlist->save();
         } catch (Exception $e) {
@@ -137,7 +137,7 @@ class AddProductToWishlist implements ResolverInterface
     private function getOptionsArray($configurableOptions) {
         $optionsArray = [];
         foreach ($configurableOptions as ['option_id' => $id, 'option_value' => $value]) {
-            $optionsArray[$id] = $value;
+            $optionsArray[(string) $id] = (int) $value;
         }
 
         return $optionsArray;
