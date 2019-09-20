@@ -16,11 +16,10 @@ declare(strict_types=1);
 namespace ScandiPWA\WishlistGraphQl\Model\Resolver;
 
 use Magento\Framework\GraphQl\Config\Element\Field;
-use Magento\Framework\GraphQl\Query\Resolver\ContextInterface;
-use Magento\Framework\GraphQl\Query\Resolver\Value;
 use Magento\Framework\GraphQl\Query\ResolverInterface;
 use Magento\Framework\GraphQl\Schema\Type\ResolveInfo;
 use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\ConfigurableProduct\Model\Product\Type\Configurable;
 use Magento\Customer\Api\CustomerRepositoryInterface;
 use Magento\Wishlist\Model\WishlistFactory;
 use Magento\Framework\GraphQl\Exception\GraphQlInputException;
@@ -79,11 +78,18 @@ class AddProductToWishlist implements ResolverInterface
             throw new GraphQlAuthorizationException(__('Authorization unsuccessful'));
         }
 
-        if (!isset($args['productSku'])) {
+        [
+            'sku' => $sku,
+            'quantity' => $quantity,
+            'description' => $description,
+            'product_option' => $productOption,
+        ] = $args['wishlistItem'];
+
+        if (!isset($sku)) {
             throw new GraphQlInputException(__('Please specify valid product'));
         }
 
-        $product = $this->productRepository->get($args['productSku']);
+        $product = $this->productRepository->get($sku);
         if (!$product->isVisibleInCatalog()) {
             throw new GraphQlInputException(__('Please specify valid product'));
         }
@@ -100,6 +106,14 @@ class AddProductToWishlist implements ResolverInterface
             }
 
             $wishlistItem = $wishlist->addNewItem($product);
+            $wishlistItem->setDescription($description);
+            $wishlistItem->setQty($quantity);
+
+            if ($product->getTypeId() === Configurable::TYPE_CODE) {
+                $configurableOptions = $this->getOptionsArray($productOption['extension_attributes']['configurable_item_options']);
+                $wishlistItem->setOptions($configurableOptions);
+            }
+
             $wishlist->save();
         } catch (Exception $e) {
             throw new GraphQlNoSuchEntityException(__('There was an error when trying to save wishlist'));
@@ -119,4 +133,14 @@ class AddProductToWishlist implements ResolverInterface
                 )
             ]);
     }
+
+    private function getOptionsArray($configurableOptions) {
+        $optionsArray = [];
+        foreach ($configurableOptions as ['option_id' => $id, 'option_value' => $value]) {
+            $optionsArray[$id] = $value;
+        }
+
+        return $optionsArray;
+    }
+
 }

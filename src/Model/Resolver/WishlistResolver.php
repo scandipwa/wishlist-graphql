@@ -14,15 +14,15 @@ declare(strict_types=1);
 
 namespace ScandiPWA\WishlistGraphQl\Model\Resolver;
 
+use Magento\Catalog\Model\ProductFactory;
+use Magento\ConfigurableProduct\Model\ResourceModel\Product\Type\Configurable;
+
 use Magento\Framework\GraphQl\Config\Element\Field;
 use Magento\Framework\GraphQl\Query\ResolverInterface;
 use Magento\Framework\GraphQl\Schema\Type\ResolveInfo;
 use Magento\Wishlist\Model\ResourceModel\Wishlist as WishlistResourceModel;
 use Magento\Wishlist\Model\Wishlist;
 use Magento\Wishlist\Model\WishlistFactory;
-use Magento\Framework\GraphQl\Exception\GraphQlInputException;
-use Magento\Framework\GraphQl\Exception\GraphQlNoSuchEntityException;
-use Magento\Framework\GraphQl\Exception\GraphQlAuthorizationException;
 
 /**
  * Fetches the Wishlist data according to the GraphQL schema
@@ -40,13 +40,30 @@ class WishlistResolver implements ResolverInterface
     private $wishlistFactory;
 
     /**
+     * @var Configurable
+     */
+    private $configurable;
+
+    /**
+     * @var ProductFactory
+     */
+    private $productFactory;
+
+    /**
      * @param WishlistResourceModel $wishlistResource
      * @param WishlistFactory $wishlistFactory
      */
-    public function __construct(WishlistResourceModel $wishlistResource, WishlistFactory $wishlistFactory)
+    public function __construct(
+        WishlistResourceModel $wishlistResource,
+        WishlistFactory $wishlistFactory,
+        Configurable $configurable,
+        ProductFactory $productFactory
+    )
     {
         $this->wishlistResource = $wishlistResource;
         $this->wishlistFactory = $wishlistFactory;
+        $this->configurable = $configurable;
+        $this->productFactory = $productFactory;
     }
 
     /**
@@ -71,11 +88,46 @@ class WishlistResolver implements ResolverInterface
             ];
         }
 
+        $itemsData = [];
+        foreach ($wishlist->getItemCollection() as $item) {
+            $product = $item->getProduct();
+            $parentIds = $this->configurable->getParentIdsByChild($product->getId());
+
+            print_r($product->getData());
+
+            if (count($parentIds)) {
+                $parentProduct = $this->productFactory->create()->load(reset($parentIds));
+                $itemsData[] = array_merge(
+                    $item->getData(),
+                    [
+                        'product' => array_merge(
+                            $parentProduct->getData(),
+                            ['model' => $parentProduct]
+                        ),
+                        'sku' => $item->getSku()
+                    ]
+                );
+            } else {
+                $itemsData[] = array_merge(
+                    $item->getData(),
+                    ['product' =>
+                        array_merge(
+                            $product->getData(),
+                            ['model' => $product]
+                        )
+                    ]
+                );
+            }
+        }
+
+        exit;
+
         return [
             'sharing_code' => $wishlist->getSharingCode(),
             'updated_at' => $wishlist->getUpdatedAt(),
             'items_count' => $wishlist->getItemsCount(),
             'name' => $wishlist->getName(),
+            'items' => $itemsData,
             'model' => $wishlist,
         ];
     }
