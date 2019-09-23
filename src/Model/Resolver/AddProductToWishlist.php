@@ -99,10 +99,6 @@ class AddProductToWishlist implements ResolverInterface
             $itemCollection = $wishlist->getItemCollection()
                 ->addFieldToFilter('product_id', $product->getId());
 
-            if ($itemCollection->getSize() > 0) {
-                throw new GraphQlInputException(__('Product has already been added to wishlist'));
-            }
-
             $buyRequest = [];
             if ($product->getTypeId() === Configurable::TYPE_CODE) {
                 $configurableOptions = $this->getOptionsArray($productOption['extension_attributes']['configurable_item_options']);
