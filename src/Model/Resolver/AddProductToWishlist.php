@@ -81,7 +81,7 @@ class AddProductToWishlist implements ResolverInterface
         ['sku' => $sku] = $args['wishlistItem'];
         $quantity = $args['wishlistItem']['quantity'] ?? 1;
         $description = $args['wishlistItem']['description'] ?? '';
-        $productOption = $args['wishlistItem']['product_option'];
+        $productOption = $args['wishlistItem']['product_option'] ?? [];
 
         if (!isset($sku)) {
             throw new GraphQlInputException(__('Please specify valid product'));
