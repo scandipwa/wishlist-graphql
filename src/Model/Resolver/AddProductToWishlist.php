@@ -96,9 +96,6 @@ class AddProductToWishlist implements ResolverInterface
             $wishlist = $this->wishlistFactory->create();
             $wishlist->loadByCustomerId($customerId, true);
 
-            $itemCollection = $wishlist->getItemCollection()
-                ->addFieldToFilter('product_id', $product->getId());
-
             $buyRequest = [];
             if ($product->getTypeId() === Configurable::TYPE_CODE) {
                 $configurableOptions = $this->getOptionsArray($productOption['extension_attributes']['configurable_item_options']);
