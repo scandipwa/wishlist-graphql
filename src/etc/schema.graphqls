@@ -14,7 +14,7 @@
 type Mutation {
     addProductToWishlist(wishlistItem: WishlistItemInput!): WishlistItem @doc(description: "Adds product to wish list by its sku") @resolver(class:"\\ScandiPWA\\WishlistGraphQl\\Model\\Resolver\\AddProductToWishlist")
     removeProductFromWishlist(itemId: String!): Boolean @doc(description: "Removes product from wish list by its id in it") @resolver(class:"\\ScandiPWA\\WishlistGraphQl\\Model\\Resolver\\RemoveProductFromWishlist")
-    updateWishlistItem(itemId: String!, quantity: Number, description: String): WishlistItem @doc(description: "Updates wishlist item") @resolver(class: "\\ScandiPWA\\WishlistGraphQl\\Model\\Resolver\\UpdateProductInWishlist")
+    updateWishlistItem(itemId: String!, quantity: Int, description: String): WishlistItem @doc(description: "Updates wishlist item") @resolver(class: "\\ScandiPWA\\WishlistGraphQl\\Model\\Resolver\\UpdateWishlistItem")
 }
 
 input WishlistItemInput {

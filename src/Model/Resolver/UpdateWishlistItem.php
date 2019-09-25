@@ -15,6 +15,8 @@ declare(strict_types=1);
 
 namespace ScandiPWA\WishlistGraphQl\Model\Resolver;
 
+use Magento\Wishlist\Model\ItemFactory;
+use Magento\Wishlist\Model\WishlistFactory;
 use Magento\Framework\GraphQl\Config\Element\Field;
 use Magento\Framework\GraphQl\Query\ResolverInterface;
 use Magento\Framework\GraphQl\Schema\Type\ResolveInfo;
@@ -25,13 +27,30 @@ use Magento\Framework\GraphQl\Exception\GraphQlNoSuchEntityException;
  * Class UpdateProductInWishlist
  * @package ScandiPWA\WishlistGraphQl\Model\Resolver
  */
-class UpdateProductInWishlist implements ResolverInterface
+class UpdateWishlistItem implements ResolverInterface
 {
+    /**
+     * @var ItemFactory
+     */
+    protected $wishlistItemFactory;
+
+    /**
+     * @var WishlistFactory
+     */
+    protected $wishlistFactory;
+
+    public function __construct (
+        ItemFactory $wishlistItemFactory,
+        WishlistFactory $wishlistFactory
+    ) {
+        $this->wishlistFactory = $wishlistFactory;
+        $this->wishlistItemFactory = $wishlistItemFactory;
+    }
 
     /**
      * @inheritDoc
      */
-    public function resolve (
+    public function resolve(
         Field $field,
         $context,
         ResolveInfo $info,
