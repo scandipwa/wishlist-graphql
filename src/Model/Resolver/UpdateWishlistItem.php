@@ -20,8 +20,9 @@ use Magento\Wishlist\Model\WishlistFactory;
 use Magento\Framework\GraphQl\Config\Element\Field;
 use Magento\Framework\GraphQl\Query\ResolverInterface;
 use Magento\Framework\GraphQl\Schema\Type\ResolveInfo;
-use Magento\Framework\GraphQl\Exception\GraphQlAuthorizationException;
+use Magento\Framework\GraphQl\Exception\GraphQlInputException;
 use Magento\Framework\GraphQl\Exception\GraphQlNoSuchEntityException;
+use Magento\Framework\GraphQl\Exception\GraphQlAuthorizationException;
 
 /**
  * Class UpdateProductInWishlist
@@ -66,7 +67,7 @@ class UpdateWishlistItem implements ResolverInterface
             throw new GraphQlInputException(__('Please specify a valid wishlist item'));
         }
 
-        if (!(array_key_exists('quantity', $args) && array_key_exists('description', $args))) {
+        if (!(array_key_exists('quantity', $args) || array_key_exists('description', $args))) {
             throw new GraphQlInputException(__('Please specify either quantity or description to update'));
         }
 
@@ -92,6 +93,7 @@ class UpdateWishlistItem implements ResolverInterface
         }
 
         try {
+            $item->save();
             $wishlist->save();
         } catch (Exception $e) {
             throw new GraphQlNoSuchEntityException(__('There was an error when trying to update wishlist item'));
