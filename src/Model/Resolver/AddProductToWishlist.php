@@ -1,4 +1,5 @@
 <?php
+
 /**
  * ScandiPWA - Progressive Web App for Magento
  *
@@ -10,7 +11,7 @@
  * @link    https://github.com/scandipwa/wishlist-graphql
  */
 
-declare (strict_types = 1);
+declare(strict_types=1);
 
 namespace ScandiPWA\WishlistGraphQl\Model\Resolver;
 
@@ -117,12 +118,14 @@ class AddProductToWishlist implements ResolverInterface
         return array_merge(
             $wishlistItem->getData(),
             ['model' => $wishlistItem],
-            ['product' =>
+            [
+                'product' =>
                 array_merge(
                     $wishlistItem->getProduct()->getData(),
                     ['model' => $product]
                 ),
-            ]);
+            ]
+        );
     }
 
     private function getOptionsArray($configurableOptions)
@@ -134,5 +137,4 @@ class AddProductToWishlist implements ResolverInterface
 
         return $optionsArray;
     }
-
 }

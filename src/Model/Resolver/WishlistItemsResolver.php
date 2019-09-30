@@ -1,4 +1,5 @@
 <?php
+
 /**
  * ScandiPWA - Progressive Web App for Magento
  *
@@ -16,16 +17,15 @@ namespace ScandiPWA\WishlistGraphQl\Model\Resolver;
 
 use Magento\Catalog\Model\ProductFactory;
 use Magento\ConfigurableProduct\Model\Product\Type\Configurable;
-
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\GraphQl\Config\Element\Field;
 use Magento\Framework\GraphQl\Query\ResolverInterface;
 use Magento\Framework\GraphQl\Schema\Type\ResolveInfo;
 use Magento\Store\Api\Data\StoreInterface;
 use Magento\Store\Model\StoreManagerInterface;
+use Magento\Wishlist\Model\Item;
 use Magento\Wishlist\Model\ResourceModel\Item\Collection as WishlistItemCollection;
 use Magento\Wishlist\Model\ResourceModel\Item\CollectionFactory as WishlistItemCollectionFactory;
-use Magento\Wishlist\Model\Item;
 use Magento\Wishlist\Model\Wishlist;
 
 /**
@@ -131,5 +131,4 @@ class WishlistItemsResolver implements ResolverInterface
 
         return $sku;
     }
-
 }

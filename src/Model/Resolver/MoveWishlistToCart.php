@@ -11,7 +11,7 @@
  * @link    https://github.com/scandipwa/wishlist-graphql
  */
 
-declare (strict_types = 1);
+declare(strict_types=1);
 
 namespace ScandiPWA\WishlistGraphQl\Model\Resolver;
 

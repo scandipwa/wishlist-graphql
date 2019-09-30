@@ -1,4 +1,5 @@
 <?php
+
 /**
  * ScandiPWA - Progressive Web App for Magento
  *
@@ -12,17 +13,16 @@
 
 declare(strict_types=1);
 
-
 namespace ScandiPWA\WishlistGraphQl\Model\Resolver;
 
-use Magento\Wishlist\Model\ItemFactory;
-use Magento\Wishlist\Model\WishlistFactory;
 use Magento\Framework\GraphQl\Config\Element\Field;
-use Magento\Framework\GraphQl\Query\ResolverInterface;
-use Magento\Framework\GraphQl\Schema\Type\ResolveInfo;
+use Magento\Framework\GraphQl\Exception\GraphQlAuthorizationException;
 use Magento\Framework\GraphQl\Exception\GraphQlInputException;
 use Magento\Framework\GraphQl\Exception\GraphQlNoSuchEntityException;
-use Magento\Framework\GraphQl\Exception\GraphQlAuthorizationException;
+use Magento\Framework\GraphQl\Query\ResolverInterface;
+use Magento\Framework\GraphQl\Schema\Type\ResolveInfo;
+use Magento\Wishlist\Model\ItemFactory;
+use Magento\Wishlist\Model\WishlistFactory;
 
 /**
  * Class UpdateProductInWishlist
@@ -40,7 +40,7 @@ class UpdateWishlistItem implements ResolverInterface
      */
     protected $wishlistFactory;
 
-    public function __construct (
+    public function __construct(
         ItemFactory $wishlistItemFactory,
         WishlistFactory $wishlistFactory
     ) {
@@ -70,7 +70,6 @@ class UpdateWishlistItem implements ResolverInterface
         if (!(array_key_exists('quantity', $args) || array_key_exists('description', $args))) {
             throw new GraphQlInputException(__('Please specify either quantity or description to update'));
         }
-
 
         $item = $this->wishlistItemFactory->create()->load($args['itemId']);
 
@@ -104,5 +103,4 @@ class UpdateWishlistItem implements ResolverInterface
             ['model' => $item]
         );
     }
-
 }
