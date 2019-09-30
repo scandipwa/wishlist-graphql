@@ -46,6 +46,7 @@ class MoveWishlistToCart implements ResolverInterface
      * @var CartManagementInterface
      */
     protected $quoteManagement;
+
     /**
      * @var WishlistFactory
      */
