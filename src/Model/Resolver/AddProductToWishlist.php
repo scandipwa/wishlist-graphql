@@ -10,21 +10,20 @@
  * @link    https://github.com/scandipwa/wishlist-graphql
  */
 
-declare(strict_types=1);
-
+declare (strict_types = 1);
 
 namespace ScandiPWA\WishlistGraphQl\Model\Resolver;
 
-use Magento\Framework\GraphQl\Config\Element\Field;
-use Magento\Framework\GraphQl\Query\ResolverInterface;
-use Magento\Framework\GraphQl\Schema\Type\ResolveInfo;
 use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\ConfigurableProduct\Model\Product\Type\Configurable;
 use Magento\Customer\Api\CustomerRepositoryInterface;
-use Magento\Wishlist\Model\WishlistFactory;
+use Magento\Framework\GraphQl\Config\Element\Field;
+use Magento\Framework\GraphQl\Exception\GraphQlAuthorizationException;
 use Magento\Framework\GraphQl\Exception\GraphQlInputException;
 use Magento\Framework\GraphQl\Exception\GraphQlNoSuchEntityException;
-use Magento\Framework\GraphQl\Exception\GraphQlAuthorizationException;
+use Magento\Framework\GraphQl\Query\ResolverInterface;
+use Magento\Framework\GraphQl\Schema\Type\ResolveInfo;
+use Magento\Wishlist\Model\WishlistFactory;
 
 /**
  * Class AddWishlistForCustomer
@@ -106,7 +105,6 @@ class AddProductToWishlist implements ResolverInterface
             $wishlistItem->setDescription($description);
             $wishlistItem->setQty($quantity);
 
-
             $wishlist->save();
         } catch (Exception $e) {
             throw new GraphQlNoSuchEntityException(__('There was an error when trying to save wishlist'));
@@ -123,11 +121,12 @@ class AddProductToWishlist implements ResolverInterface
                 array_merge(
                     $wishlistItem->getProduct()->getData(),
                     ['model' => $product]
-                )
+                ),
             ]);
     }
 
-    private function getOptionsArray($configurableOptions) {
+    private function getOptionsArray($configurableOptions)
+    {
         $optionsArray = [];
         foreach ($configurableOptions as ['option_id' => $id, 'option_value' => $value]) {
             $optionsArray[(string) $id] = (int) $value;
