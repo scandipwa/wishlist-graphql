@@ -91,6 +91,7 @@ class WishlistItemsResolver implements ResolverInterface
                 'model' => $wishlistItem,
             ];
         }
+
         return $data;
     }
 
@@ -110,6 +111,7 @@ class WishlistItemsResolver implements ResolverInterface
                 return $store->getId();
             }, $this->storeManager->getStores()))
             ->setVisibilityFilter();
+
         return $wishlistItemCollection->getItems();
     }
 
