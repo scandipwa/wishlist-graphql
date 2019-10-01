@@ -50,7 +50,6 @@ mutation RemoveProductFromWishlist($item_id: Int!) {
 }
 ```
 
-
 ### UpdateWishlistItem
 
 This endpoint allows to update wishlist item
@@ -75,7 +74,6 @@ mutation UpdateWishlistItem($itemId: String!, $quantity: Int, $description: Stri
     "description": "Description"
 }
 ```
-
 
 ### MoveWishlistToCart
 

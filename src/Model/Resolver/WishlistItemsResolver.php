@@ -36,7 +36,7 @@ class WishlistItemsResolver implements ResolverInterface
     /**
      * @var WishlistItemCollectionFactory
      */
-    private $wishlistItemCollectionFactory;
+    private $wishlistItemsFactory;
 
     /**
      * @var StoreManagerInterface
@@ -49,15 +49,15 @@ class WishlistItemsResolver implements ResolverInterface
     private $productFactory;
 
     /**
-     * @param WishlistItemCollectionFactory $wishlistItemCollectionFactory
+     * @param WishlistItemCollectionFactory $wishlistItemsFactory
      * @param StoreManagerInterface $storeManager
      */
     public function __construct(
-        WishlistItemCollectionFactory $wishlistItemCollectionFactory,
+        WishlistItemCollectionFactory $wishlistItemsFactory,
         StoreManagerInterface $storeManager,
         ProductFactory $productFactory
     ) {
-        $this->wishlistItemCollectionFactory = $wishlistItemCollectionFactory;
+        $this->wishlistItemsFactory = $wishlistItemsFactory;
         $this->storeManager = $storeManager;
         $this->productFactory = $productFactory;
     }
@@ -103,16 +103,16 @@ class WishlistItemsResolver implements ResolverInterface
      */
     private function getWishListItems(Wishlist $wishlist): array
     {
-        /** @var WishlistItemCollection $wishlistItemCollection */
-        $wishlistItemCollection = $this->wishlistItemCollectionFactory->create();
-        $wishlistItemCollection
+        /** @var WishlistItemCollection $collection */
+        $collection = $this->wishlistItemsFactory->create();
+        $collection
             ->addWishlistFilter($wishlist)
             ->addStoreFilter(array_map(function (StoreInterface $store) {
                 return $store->getId();
             }, $this->storeManager->getStores()))
             ->setVisibilityFilter();
 
-        return $wishlistItemCollection->getItems();
+        return $collection->getItems();
     }
 
     /**
