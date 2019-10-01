@@ -8,9 +8,10 @@
 This endpoint allows to add product to Wishlist
 
 ```graphql
-mutation AddProductToWishlist($productSku: String!) {
-    addProductToWishlist(productSku: $productSku) {
+mutation AddProductToWishlist($wishlistItem: WishlistItemInput!) {
+    addProductToWishlist(wishlistItem: $wishlistItem) {
          id
+         sku
          qty
          description
          added_at
@@ -21,12 +22,21 @@ mutation AddProductToWishlist($productSku: String!) {
 
 ```json
 {
-   "product_sku": "n31189077-1"
+   "wishlistItem": {
+       "sku": "n31189077-1",
+       "quantity": 2,
+       "description": "Description",
+       "product_option": {
+           "extension_attributes": {}
+       }
+   }
 }
 ```
 
 
 ### RemoveProductFromWishlist
+
+This endpoint allows removing item from wishlist
 
 ```graphql
 mutation RemoveProductFromWishlist($item_id: Int!) {
@@ -37,5 +47,52 @@ mutation RemoveProductFromWishlist($item_id: Int!) {
 ```json
 {
    "item_id": 1
+}
+```
+
+
+### UpdateWishlistItem
+
+This endpoint allows to update wishlist item
+
+```graphql
+mutation UpdateWishlistItem($itemId: String!, $quantity: Int, $description: String) {
+    updateWishlistItem(itemId: $itemId, quantity: $quantity, description: $description) {
+        id
+        sku
+        qty
+        description
+        added_at
+        product
+    }
+}
+```
+
+```json
+{
+    "itemId": 1,
+    "quantity": 2,
+    "description": "Description"
+}
+```
+
+
+### MoveWishlistToCart
+
+This endpoint allows to move all wishlist items to cart
+
+```graphql
+mutation MoveWishlistToCart {
+    moveWishlistToCart()
+}
+```
+
+### ClearWishlist
+
+This endpoint allows to clear wishlist
+
+```graphql
+mutation ClearWishlist {
+    clearWishlist()
 }
 ```
