@@ -105,27 +105,6 @@ class MoveWishlistToCart implements ResolverInterface
     }
 
     /**
-     * Cleans wishlist after moving all items to cart
-     *
-     * @param Wishlist $wishlist
-     * @return void
-     */
-    protected function cleanWishlist(Wishlist $wishlist): void
-    {
-        $itemsCollection = $wishlist->getItemCollection();
-
-        foreach ($itemsCollection as $item) {
-            $item->delete();
-        }
-
-        try {
-            $wishlist->save();
-        } catch (Exception $e) {
-            throw new GraphQlNoSuchEntityException(__('There was an error when trying to clean wishlist'));
-        }
-    }
-
-    /**
      * Prepares array with wishlist data
      *
      * @param Wishlist $wishlist
@@ -145,6 +124,8 @@ class MoveWishlistToCart implements ResolverInterface
                 'product' => $product,
                 'super_attribute' => $superAttribute,
             ];
+
+            $item->delete();
         }
 
         return $items;
@@ -193,9 +174,9 @@ class MoveWishlistToCart implements ResolverInterface
         }
 
         $this->addItemsToCart($wishlistItems, $cart);
-        $this->cleanWishlist($wishlist);
 
         try {
+            $wishlist->save();
             $cart->save();
         } catch (Exception $e) {
             throw new GraphQlNoSuchEntityException(__('There was an error when trying to save wishlist items to cart'));
