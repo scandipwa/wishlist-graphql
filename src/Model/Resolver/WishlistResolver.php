@@ -62,7 +62,7 @@ class WishlistResolver implements ResolverInterface
         $wishlist = $this->wishlistFactory->create();
         $this->wishlistResource->load($wishlist, $customerId, 'customer_id');
 
-        if (null === $wishlist->getId()) {
+        if (!$wishlist->getId()) {
             return [
                 'model' => $wishlist,
             ];

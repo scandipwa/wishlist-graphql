@@ -56,7 +56,7 @@ class ClearWishlist implements ResolverInterface
         array $args = null
     ) {
         $customerId = $context->getUserId();
-        if ($customerId === null || $customerId === 0) {
+        if (!$customerId) {
             throw new GraphQlAuthorizationException(__('Authorization unsuccessful'));
         }
 
@@ -64,7 +64,7 @@ class ClearWishlist implements ResolverInterface
         $wishlist = $this->wishlistFactory->create();
         $this->wishlistResource->load($wishlist, $customerId, 'customer_id');
 
-        if (null === $wishlist->getId() || $wishlist->getItemsCount() <= 0) {
+        if (!$wishlist->getId() || $wishlist->getItemsCount() <= 0) {
             return true;
         }
 

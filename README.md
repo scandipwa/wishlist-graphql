@@ -3,13 +3,13 @@
 **WishlistGraphQl** provides additional resolvers for wishlist, extending Magento_WishlistGraphQl. 
 
 
-### AddProductToWishlist
+### SaveWishlistItem
 
-This endpoint allows to add product to Wishlist
+This endpoint allows to save Wishlist item
 
 ```graphql
-mutation AddProductToWishlist($wishlistItem: WishlistItemInput!) {
-    addProductToWishlist(wishlistItem: $wishlistItem) {
+mutation SaveWishlistItem($wishlistItem: WishlistItemInput!) {
+    saveWishlistItem(wishlistItem: $wishlistItem) {
          id
          sku
          qty
@@ -39,7 +39,7 @@ mutation AddProductToWishlist($wishlistItem: WishlistItemInput!) {
 This endpoint allows removing item from wishlist
 
 ```graphql
-mutation RemoveProductFromWishlist($item_id: Int!) {
+mutation RemoveProductFromWishlist($item_id: ID!) {
     removeProductFromWishlist(item_id: $item_id)
 }
 ```
@@ -47,31 +47,6 @@ mutation RemoveProductFromWishlist($item_id: Int!) {
 ```json
 {
    "item_id": 1
-}
-```
-
-### UpdateWishlistItem
-
-This endpoint allows to update wishlist item
-
-```graphql
-mutation UpdateWishlistItem($itemId: String!, $quantity: Int, $description: String) {
-    updateWishlistItem(itemId: $itemId, quantity: $quantity, description: $description) {
-        id
-        sku
-        qty
-        description
-        added_at
-        product
-    }
-}
-```
-
-```json
-{
-    "itemId": 1,
-    "quantity": 2,
-    "description": "Description"
 }
 ```
 

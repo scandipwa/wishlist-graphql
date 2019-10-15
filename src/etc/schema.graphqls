@@ -12,20 +12,20 @@
 # See COPYING.txt for license details.
 
 type Mutation {
-    addProductToWishlist(wishlistItem: WishlistItemInput!): WishlistItem @doc(description: "Adds product to wish list by its sku") @resolver(class:"\\ScandiPWA\\WishlistGraphQl\\Model\\Resolver\\AddProductToWishlist")
-    removeProductFromWishlist(itemId: String!): Boolean @doc(description: "Removes product from wish list by its id in it") @resolver(class:"\\ScandiPWA\\WishlistGraphQl\\Model\\Resolver\\RemoveProductFromWishlist")
-    updateWishlistItem(itemId: String!, quantity: Int, description: String): WishlistItem @doc(description: "Updates wishlist item") @resolver(class: "\\ScandiPWA\\WishlistGraphQl\\Model\\Resolver\\UpdateWishlistItem")
+    saveWishlistItem(wishlistItem: WishlistItemInput!): WishlistItem @doc(description: "Saves wishlist item") @resolver(class:"\\ScandiPWA\\WishlistGraphQl\\Model\\Resolver\\SaveProductToWishlist")
+    removeProductFromWishlist(itemId: ID!): Boolean @doc(description: "Removes product from wishlist") @resolver(class:"\\ScandiPWA\\WishlistGraphQl\\Model\\Resolver\\RemoveProductFromWishlist")
     moveWishlistToCart: Boolean @doc(description: "Moves items from wishlist to cart") @resolver(class:"ScandiPWA\\WishlistGraphQl\\Model\\Resolver\\MoveWishlistToCart")
     clearWishlist: Boolean @doc(description: "Clears wishlist") @resolver(class: "ScandiPWA\\WishlistGraphQl\\Model\\Resolver\\ClearWishlist")
 }
 
 input WishlistItemInput {
-    sku: String! @doc(description: "Sku of the product")
+    sku: ID @doc(description: "Sku of the product")
+    item_id: ID @doc(description: "Id of the wishlist item")
     quantity: Int @doc(description: "Quantity of the product")
     description: String @doc(description: "User description of wish list item")
     product_option: ProductOptionInput @doc(description: "Configurable product options")
 }
 
 extend type WishlistItem {
-    sku: String @doc(description: "The wish list item's SKU")
+    sku: ID @doc(description: "The wish list item's SKU")
 }

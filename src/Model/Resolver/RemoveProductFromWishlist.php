@@ -73,7 +73,7 @@ class RemoveProductFromWishlist implements ResolverInterface
         array $args = null
     ) {
         $customerId = $context->getUserId();
-        if ($customerId === null || $customerId === 0) {
+        if (!$customerId) {
             throw new GraphQlAuthorizationException(__('There was an issue with authorization'));
         }
 

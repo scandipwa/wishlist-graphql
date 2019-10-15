@@ -123,14 +123,14 @@ class WishlistItemsResolver implements ResolverInterface
     private function getWishListItemSku($wishlistItem): string
     {
         $product = $wishlistItem->getProduct();
-        $sku = $product->getSku();
 
         if ($product->getTypeId() === Configurable::TYPE_CODE) {
             $variantId = $wishlistItem->getOptionByCode('simple_product')->getValue();
             $childProduct = $this->productFactory->create()->load($variantId);
-            $sku = $childProduct->getSku();
+
+            return $childProduct->getSku();
         }
 
-        return $sku;
+        return $product->getSku();
     }
 }

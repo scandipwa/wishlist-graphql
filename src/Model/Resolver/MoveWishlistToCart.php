@@ -171,7 +171,7 @@ class MoveWishlistToCart implements ResolverInterface
         $wishlist = $this->wishlistFactory->create();
         $this->wishlistResource->load($wishlist, $customerId, 'customer_id');
 
-        if (null === $wishlist->getId() || $wishlist->getItemsCount() <= 0) {
+        if (!$wishlist->getId() || $wishlist->getItemsCount() <= 0) {
             return true;
         }
 

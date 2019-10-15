@@ -24,13 +24,14 @@ use Magento\Framework\GraphQl\Exception\GraphQlInputException;
 use Magento\Framework\GraphQl\Exception\GraphQlNoSuchEntityException;
 use Magento\Framework\GraphQl\Query\ResolverInterface;
 use Magento\Framework\GraphQl\Schema\Type\ResolveInfo;
+use Magento\Wishlist\Model\Wishlist;
 use Magento\Wishlist\Model\WishlistFactory;
 
 /**
- * Class AddWishlistForCustomer
+ * Class SaveProductToWishlist
  * @package ScandiPWA\WishlistGraphQl\Model\Resolver
  */
-class AddProductToWishlist implements ResolverInterface
+class SaveProductToWishlist implements ResolverInterface
 {
     /**
      * @var ProductRepositoryInterface
@@ -48,7 +49,7 @@ class AddProductToWishlist implements ResolverInterface
     protected $wishlistFactory;
 
     /**
-     * AddWishlistForCustomer constructor.
+     * SaveProductToWishlist constructor.
      * @param ProductRepositoryInterface $productRepository
      * @param CustomerRepositoryInterface $customerRepository
      * @param WishlistFactory $wishlistFactory
@@ -74,18 +75,32 @@ class AddProductToWishlist implements ResolverInterface
         array $args = null
     ) {
         $customerId = $context->getUserId();
-        if ($customerId === null || $customerId === 0) {
+        if (!$customerId) {
             throw new GraphQlAuthorizationException(__('Authorization unsuccessful'));
         }
 
-        ['sku' => $sku] = $args['wishlistItem'];
-        $quantity = $args['wishlistItem']['quantity'] ?? 1;
-        $description = $args['wishlistItem']['description'] ?? '';
-        $productOption = $args['wishlistItem']['product_option'] ?? [];
+        $sku = $args['wishlistItem']['sku'] ?? '';
+        $itemId = $args['wishlistItem']['item_id'] ?? '';
 
-        if (!isset($sku)) {
-            throw new GraphQlInputException(__('Please specify valid product'));
+        $wishlist = $this->wishlistFactory->create();
+        $wishlist->loadByCustomerId($customerId, true);
+
+        if ($sku !== '') {
+            return $this->addProductToWishlist($wishlist, $sku, $args['wishlistItem']);
         }
+
+        if ($itemId !== '') {
+            return $this->updateWishlistItem($wishlist, $itemId, $args['wishlistItem']);
+        }
+
+        throw new GraphQlInputException(__('Please specify either sku or item_id'));
+    }
+
+    protected function addProductToWishlist(Wishlist $wishlist, string $sku, array $parameters)
+    {
+        $quantity = $parameters['quantity'] || 1;
+        $description = $parameters['description'] ?? '';
+        $productOption = $parameters['product_option'] ?? [];
 
         $product = $this->productRepository->get($sku);
         if (!$product->isVisibleInCatalog()) {
@@ -93,16 +108,13 @@ class AddProductToWishlist implements ResolverInterface
         }
 
         try {
-            $wishlist = $this->wishlistFactory->create();
-            $wishlist->loadByCustomerId($customerId, true);
-
-            $buyRequest = [];
+            $configurableData = [];
             if ($product->getTypeId() === Configurable::TYPE_CODE) {
                 $configurableOptions = $this->getOptionsArray($productOption['extension_attributes']['configurable_item_options']);
-                $buyRequest['super_attribute'] = $configurableOptions;
+                $configurableData['super_attribute'] = $configurableOptions;
             }
 
-            $wishlistItem = $wishlist->addNewItem($product, $buyRequest);
+            $wishlistItem = $wishlist->addNewItem($product, $configurableData);
             $wishlistItem->setDescription($description);
             $wishlistItem->setQty($quantity);
 
@@ -128,7 +140,44 @@ class AddProductToWishlist implements ResolverInterface
         );
     }
 
-    private function getOptionsArray($configurableOptions)
+    protected function updateWishlistItem(Wishlist $wishlist, string $itemId, array $parameters)
+    {
+        if (!(array_key_exists('quantity', $parameters) || array_key_exists('description', $parameters))) {
+            throw new GraphQlInputException(__('Please specify either quantity or description to update'));
+        }
+
+        $item = $wishlist->getItem($itemId);
+
+        if (!$item->getId()) {
+            throw new GraphQlInputException(__('Please specify a valid wishlist item'));
+        }
+
+        if ($wishlist->getId() !== $item->getWishlistId()) {
+            throw new GraphQlNoSuchEntityException(__('Invalid wishlist'));
+        }
+
+        if (array_key_exists('quantity', $parameters)) {
+            $item->setQty($parameters['quantity']);
+        }
+
+        if (array_key_exists('description', $parameters)) {
+            $item->setDescription($parameters['description']);
+        }
+
+        try {
+            $item->save();
+            $wishlist->save();
+        } catch (Exception $e) {
+            throw new GraphQlNoSuchEntityException(__('There was an error when trying to update wishlist item'));
+        }
+
+        return array_merge(
+            $item->getData(),
+            ['model' => $item]
+        );
+    }
+
+    protected function getOptionsArray(array $configurableOptions)
     {
         $optionsArray = [];
         foreach ($configurableOptions as ['option_id' => $id, 'option_value' => $value]) {
