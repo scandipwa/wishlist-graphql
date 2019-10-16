@@ -3,14 +3,15 @@
 **WishlistGraphQl** provides additional resolvers for wishlist, extending Magento_WishlistGraphQl. 
 
 
-### AddProductToWishlist
+### SaveWishlistItem
 
-This endpoint allows to add product to Wishlist
+This endpoint allows to save Wishlist item
 
 ```graphql
-mutation AddProductToWishlist($productSku: String!) {
-    addProductToWishlist(productSku: $productSku) {
+mutation SaveWishlistItem($wishlistItem: WishlistItemInput!) {
+    saveWishlistItem(wishlistItem: $wishlistItem) {
          id
+         sku
          qty
          description
          added_at
@@ -21,15 +22,24 @@ mutation AddProductToWishlist($productSku: String!) {
 
 ```json
 {
-   "product_sku": "n31189077-1"
+   "wishlistItem": {
+       "sku": "n31189077-1",
+       "quantity": 2,
+       "description": "Description",
+       "product_option": {
+           "extension_attributes": {}
+       }
+   }
 }
 ```
 
 
 ### RemoveProductFromWishlist
 
+This endpoint allows removing item from wishlist
+
 ```graphql
-mutation RemoveProductFromWishlist($item_id: Int!) {
+mutation RemoveProductFromWishlist($item_id: ID!) {
     removeProductFromWishlist(item_id: $item_id)
 }
 ```
@@ -37,5 +47,25 @@ mutation RemoveProductFromWishlist($item_id: Int!) {
 ```json
 {
    "item_id": 1
+}
+```
+
+### MoveWishlistToCart
+
+This endpoint allows to move all wishlist items to cart
+
+```graphql
+mutation MoveWishlistToCart {
+    moveWishlistToCart()
+}
+```
+
+### ClearWishlist
+
+This endpoint allows to clear wishlist
+
+```graphql
+mutation ClearWishlist {
+    clearWishlist()
 }
 ```

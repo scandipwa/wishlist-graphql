@@ -17,6 +17,10 @@
         {
           "name": "Alfreds Genkins",
           "email": "alfreds@scandiweb.com"
+        },
+        {
+          "name": "Artjoms Travkovs",
+          "email": "artjoms.travkovs@scandiweb.com"
         }
     ],
     "license": [
