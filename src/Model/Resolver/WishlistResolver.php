@@ -20,6 +20,7 @@ use Magento\Framework\GraphQl\Schema\Type\ResolveInfo;
 use Magento\Wishlist\Model\ResourceModel\Wishlist as WishlistResourceModel;
 use Magento\Wishlist\Model\Wishlist;
 use Magento\Wishlist\Model\WishlistFactory;
+use Magento\Framework\GraphQl\Exception\GraphQlNoSuchEntityException;
 
 /**
  * Fetches the Wishlist data according to the GraphQL schema
@@ -56,11 +57,11 @@ class WishlistResolver implements ResolverInterface
         array $value = null,
         array $args = null
     ) {
-        $customerId = $context->getUserId();
-
         /** @var Wishlist $wishlist */
         $wishlist = $this->wishlistFactory->create();
-        $this->wishlistResource->load($wishlist, $customerId, 'customer_id');
+        $sharingCode = $args['sharing_code'] ?? null;
+
+        $this->loadWishlist($wishlist, $sharingCode, $context);
 
         if (!$wishlist->getId()) {
             return [
@@ -75,5 +76,20 @@ class WishlistResolver implements ResolverInterface
             'name' => $wishlist->getName(),
             'model' => $wishlist,
         ];
+    }
+
+    private function loadWishlist(Wishlist $wishlist, $sharingCode, $context): void
+    {
+        if (!$sharingCode) {
+            $customerId = $context->getUserId();
+            $this->wishlistResource->load($wishlist, $customerId, 'customer_id');
+            return;
+        }
+
+        $this->wishlistResource->load($wishlist, $sharingCode, 'sharing_code');
+
+        if (!$wishlist->getShared()) {
+            throw new GraphQlNoSuchEntityException(__('Shared wishlist with provided sharing code does not exist'));
+        }
     }
 }

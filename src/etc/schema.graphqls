@@ -18,6 +18,10 @@ type Mutation {
     clearWishlist: Boolean @doc(description: "Clears wishlist") @resolver(class: "ScandiPWA\\WishlistGraphQl\\Model\\Resolver\\ClearWishlist")
 }
 
+type Query {
+    wishlist(sharing_code: String): WishlistOutput @resolver(class: "\\ScandiPWA\\WishlistGraphQl\\Model\\Resolver\\WishlistResolver")
+}
+
 input WishlistItemInput {
     sku: ID @doc(description: "Sku of the product")
     item_id: ID @doc(description: "Id of the wishlist item")
