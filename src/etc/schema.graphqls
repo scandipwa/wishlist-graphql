@@ -30,6 +30,10 @@ input WishlistItemInput {
     product_option: ProductOptionInput @doc(description: "Configurable product options")
 }
 
+extend type WishlistOutput {
+    creators_name: String @resolver(class: "\\ScandiPWA\\WishlistGraphQl\\Model\\Resolver\\Wishlist\\CreatorResolver") @doc(description: "Name of wishlist creator")
+}
+
 extend type WishlistItem {
     sku: ID @doc(description: "The wish list item's SKU")
 }
