@@ -79,6 +79,7 @@ class MoveWishlistToCart implements ResolverInterface
      */
     protected function addItemsToCart(array $wishlistItems): void
     {
+        // TODO? Add support for guest carts
         $quoteId = $this->overriderCartId->getOverriddenValue();
         $quote = $this->quoteRepository->getActive($quoteId);
 
@@ -125,6 +126,7 @@ class MoveWishlistToCart implements ResolverInterface
                 'super_attribute' => $superAttribute,
             ];
 
+            // TODO? Don't remove if it is shared_wishlist viewed by non-owner
             $item->delete();
         }
 
@@ -148,6 +150,7 @@ class MoveWishlistToCart implements ResolverInterface
 
         $cart = $this->quoteManagement->getCartForCustomer($customerId);
 
+        // TODO? Add support for shared_wishlist
         /** @var Wishlist $wishlist */
         $wishlist = $this->wishlistFactory->create();
         $this->wishlistResource->load($wishlist, $customerId, 'customer_id');
