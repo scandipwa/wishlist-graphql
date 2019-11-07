@@ -14,12 +14,12 @@
 type Mutation {
     saveWishlistItem(wishlistItem: WishlistItemInput!): WishlistItem @doc(description: "Saves wishlist item") @resolver(class:"\\ScandiPWA\\WishlistGraphQl\\Model\\Resolver\\SaveProductToWishlist")
     removeProductFromWishlist(itemId: ID!): Boolean @doc(description: "Removes product from wishlist") @resolver(class:"\\ScandiPWA\\WishlistGraphQl\\Model\\Resolver\\RemoveProductFromWishlist")
-    moveWishlistToCart: Boolean @doc(description: "Moves items from wishlist to cart") @resolver(class:"ScandiPWA\\WishlistGraphQl\\Model\\Resolver\\MoveWishlistToCart")
+    moveWishlistToCart(guestCartId: ID, sharingCode: ID): Boolean @doc(description: "Moves items from wishlist to cart") @resolver(class:"ScandiPWA\\WishlistGraphQl\\Model\\Resolver\\MoveWishlistToCart")
     clearWishlist: Boolean @doc(description: "Clears wishlist") @resolver(class: "ScandiPWA\\WishlistGraphQl\\Model\\Resolver\\ClearWishlist")
 }
 
 type Query {
-    wishlist(sharing_code: String): WishlistOutput @resolver(class: "\\ScandiPWA\\WishlistGraphQl\\Model\\Resolver\\WishlistResolver")
+    wishlist(sharing_code: ID): WishlistOutput @resolver(class: "\\ScandiPWA\\WishlistGraphQl\\Model\\Resolver\\WishlistResolver")
 }
 
 input WishlistItemInput {

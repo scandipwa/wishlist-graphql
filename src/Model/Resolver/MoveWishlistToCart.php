@@ -22,8 +22,10 @@ use Magento\Framework\GraphQl\Exception\GraphQlAuthorizationException;
 use Magento\Framework\GraphQl\Exception\GraphQlNoSuchEntityException;
 use Magento\Framework\GraphQl\Query\ResolverInterface;
 use Magento\Framework\GraphQl\Schema\Type\ResolveInfo;
+use Magento\Quote\Api\Data\CartInterface;
 use Magento\Quote\Api\CartManagementInterface;
 use Magento\Quote\Api\CartRepositoryInterface;
+use Magento\Quote\Api\GuestCartRepositoryInterface;
 use Magento\Quote\Model\Webapi\ParamOverriderCartId;
 use Magento\Wishlist\Model\ResourceModel\Wishlist as WishlistResourceModel;
 use Magento\Wishlist\Model\Wishlist;
@@ -57,10 +59,16 @@ class MoveWishlistToCart implements ResolverInterface
      */
     protected $wishlistResource;
 
+    /**
+     * @var GuestCartRepositoryInterface
+     */
+    protected $guestCartRepository;
+
     public function __construct(
         ParamOverriderCartId $overriderCartId,
         CartRepositoryInterface $quoteRepository,
         CartManagementInterface $quoteManagement,
+        GuestCartRepositoryInterface $guestCartRepository,
         WishlistFactory $wishlistFactory,
         WishlistResourceModel $wishlistResource
     ) {
@@ -69,6 +77,7 @@ class MoveWishlistToCart implements ResolverInterface
         $this->quoteManagement = $quoteManagement;
         $this->wishlistFactory = $wishlistFactory;
         $this->wishlistResource = $wishlistResource;
+        $this->guestCartRepository = $guestCartRepository;
     }
 
     /**
@@ -77,12 +86,8 @@ class MoveWishlistToCart implements ResolverInterface
      * @param array $wishlistItems
      * @return void
      */
-    protected function addItemsToCart(array $wishlistItems): void
+    protected function addItemsToCart(array $wishlistItems, CartInterface $quote): void
     {
-        // TODO? Add support for guest carts
-        $quoteId = $this->overriderCartId->getOverriddenValue();
-        $quote = $this->quoteRepository->getActive($quoteId);
-
         foreach ($wishlistItems as $item) {
             $product = $item['product'];
 
@@ -111,7 +116,7 @@ class MoveWishlistToCart implements ResolverInterface
      * @param Wishlist $wishlist
      * @return array
      */
-    protected function getWishlistItems(Wishlist $wishlist): array
+    protected function getWishlistItems(Wishlist $wishlist, bool $shouldDeleteItems): array
     {
         $items = [];
         $itemsCollection = $wishlist->getItemCollection();
@@ -126,8 +131,9 @@ class MoveWishlistToCart implements ResolverInterface
                 'super_attribute' => $superAttribute,
             ];
 
-            // TODO? Don't remove if it is shared_wishlist viewed by non-owner
-            $item->delete();
+            if ($shouldDeleteItems) {
+                $item->delete();
+            }
         }
 
         return $items;
@@ -143,23 +149,29 @@ class MoveWishlistToCart implements ResolverInterface
         array $value = null,
         array $args = null
     ) {
-        $customerId = $context->getUserId();
-        if ($customerId === null || $customerId === 0) {
-            throw new GraphQlAuthorizationException(__('Authorization unsuccessful'));
+        $sharingCode = $args['sharingCode'] ?? null;
+        $guestCartId = $args['guestCartId'] ?? null;
+
+        if (!$guestCartId) {
+            $customerId = $context->getUserId();
+            if ($customerId === null || $customerId === 0) {
+                throw new GraphQlAuthorizationException(__('User not found'));
+            }
+
+            $cart = $this->quoteManagement->getCartForCustomer($customerId);
+        } else {
+            $cart = $this->guestCartRepository->get($guestCartId);
         }
 
-        $cart = $this->quoteManagement->getCartForCustomer($customerId);
-
-        // TODO? Add support for shared_wishlist
         /** @var Wishlist $wishlist */
         $wishlist = $this->wishlistFactory->create();
-        $this->wishlistResource->load($wishlist, $customerId, 'customer_id');
+        $this->loadWishlist($wishlist, $sharingCode, $context);
 
         if (!$wishlist->getId() || $wishlist->getItemsCount() <= 0) {
             return true;
         }
 
-        $wishlistItems = $this->getWishlistItems($wishlist);
+        $wishlistItems = $this->getWishlistItems($wishlist, !!$sharingCode);
         $cartItems = $cart->getItems();
 
         foreach ($cartItems as $item) {
@@ -186,5 +198,20 @@ class MoveWishlistToCart implements ResolverInterface
         }
 
         return true;
+    }
+
+    private function loadWishlist(Wishlist $wishlist, $sharingCode, $context): void
+    {
+        if (!$sharingCode) {
+            $customerId = $context->getUserId();
+            $this->wishlistResource->load($wishlist, $customerId, 'customer_id');
+            return;
+        }
+
+        $this->wishlistResource->load($wishlist, $sharingCode, 'sharing_code');
+
+        if (!$wishlist->getShared()) {
+            throw new GraphQlNoSuchEntityException(__('Shared wishlist with provided sharing code does not exist'));
+        }
     }
 }
