@@ -16,6 +16,7 @@ type Mutation {
     removeProductFromWishlist(itemId: ID!): Boolean @doc(description: "Removes product from wishlist") @resolver(class:"\\ScandiPWA\\WishlistGraphQl\\Model\\Resolver\\RemoveProductFromWishlist")
     moveWishlistToCart(guestCartId: ID, sharingCode: ID): Boolean @doc(description: "Moves items from wishlist to cart") @resolver(class:"ScandiPWA\\WishlistGraphQl\\Model\\Resolver\\MoveWishlistToCart")
     clearWishlist: Boolean @doc(description: "Clears wishlist") @resolver(class: "ScandiPWA\\WishlistGraphQl\\Model\\Resolver\\ClearWishlist")
+    shareWishlist(input: ShareWishlistInput!): Boolean @doc(description: "Shares wishlist") @resolver(class: "ScandiPWA\\WishlistGraphQl\\Model\\Resolver\\ShareWishlist")
 }
 
 type Query {
@@ -28,6 +29,11 @@ input WishlistItemInput {
     quantity: Int @doc(description: "Quantity of the product")
     description: String @doc(description: "User description of wish list item")
     product_option: ProductOptionInput @doc(description: "Configurable product options")
+}
+
+input ShareWishlistInput {
+    emails: [ID]! @doc(description: "Receiver emails")
+    message: String @doc(description: "Sharing message")
 }
 
 extend type WishlistOutput {

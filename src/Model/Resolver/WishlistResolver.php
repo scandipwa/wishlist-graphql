@@ -78,7 +78,7 @@ class WishlistResolver implements ResolverInterface
         ];
     }
 
-    private function loadWishlist(Wishlist $wishlist, $sharingCode, $context): void
+    public function loadWishlist(Wishlist $wishlist, $sharingCode, $context): void
     {
         if (!$sharingCode) {
             $customerId = $context->getUserId();
