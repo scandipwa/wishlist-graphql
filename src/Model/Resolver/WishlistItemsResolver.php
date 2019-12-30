@@ -16,7 +16,10 @@ declare(strict_types=1);
 namespace ScandiPWA\WishlistGraphQl\Model\Resolver;
 
 use Magento\Catalog\Model\ProductFactory;
+use Magento\Catalog\Model\ResourceModel\Product\Collection;
+use Magento\CatalogGraphQl\Model\Resolver\Products\DataProvider\Product\CollectionProcessorInterface;
 use Magento\ConfigurableProduct\Model\Product\Type\Configurable;
+use Magento\Framework\Api\SearchCriteriaBuilder;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\GraphQl\Config\Element\Field;
 use Magento\Framework\GraphQl\Query\ResolverInterface;
@@ -27,39 +30,77 @@ use Magento\Wishlist\Model\Item;
 use Magento\Wishlist\Model\ResourceModel\Item\Collection as WishlistItemCollection;
 use Magento\Wishlist\Model\ResourceModel\Item\CollectionFactory as WishlistItemCollectionFactory;
 use Magento\Wishlist\Model\Wishlist;
+use ScandiPWA\Performance\Model\Resolver\ProductPostProcessor;
+use Magento\Catalog\Model\ResourceModel\Product\CollectionFactory as ProductCollectionFactory;
+use ScandiPWA\Performance\Model\Resolver\Products\PostProcessorTrait;
 
 /**
- * Fetches the Wishlist Items data according to the GraphQL schema
+ * Fetches the Wish-list Items data according to the GraphQL schema
  */
 class WishlistItemsResolver implements ResolverInterface
 {
+    use PostProcessorTrait;
+
     /**
      * @var WishlistItemCollectionFactory
      */
-    private $wishlistItemsFactory;
+    protected $wishlistItemsFactory;
 
     /**
      * @var StoreManagerInterface
      */
-    private $storeManager;
+    protected $storeManager;
 
     /**
      * @var ProductFactory
      */
-    private $productFactory;
+    protected $productFactory;
+
+    /**
+     * @var ProductPostProcessor
+     */
+    protected $productPostProcessor;
+
+    /**
+     * @var CollectionProcessorInterface
+     */
+    protected $collectionProcessor;
+
+    /**
+     * @var SearchCriteriaBuilder
+     */
+    protected $searchCriteriaBuilder;
+
+    /**
+     * @var ProductCollectionFactory
+     */
+    protected $collectionFactory;
 
     /**
      * @param WishlistItemCollectionFactory $wishlistItemsFactory
      * @param StoreManagerInterface $storeManager
+     * @param ProductFactory $productFactory
+     * @param ProductPostProcessor $productPostProcessor
+     * @param SearchCriteriaBuilder $searchCriteriaBuilder
+     * @param CollectionProcessorInterface $collectionProcessor
+     * @param ProductCollectionFactory $collectionFactory
      */
     public function __construct(
         WishlistItemCollectionFactory $wishlistItemsFactory,
         StoreManagerInterface $storeManager,
-        ProductFactory $productFactory
+        ProductFactory $productFactory,
+        ProductPostProcessor $productPostProcessor,
+        SearchCriteriaBuilder $searchCriteriaBuilder,
+        CollectionProcessorInterface $collectionProcessor,
+        ProductCollectionFactory $collectionFactory
     ) {
         $this->wishlistItemsFactory = $wishlistItemsFactory;
         $this->storeManager = $storeManager;
         $this->productFactory = $productFactory;
+        $this->productPostProcessor = $productPostProcessor;
+        $this->collectionProcessor = $collectionProcessor;
+        $this->searchCriteriaBuilder = $searchCriteriaBuilder;
+        $this->collectionFactory = $collectionFactory;
     }
 
     /**
@@ -75,20 +116,32 @@ class WishlistItemsResolver implements ResolverInterface
         if (!isset($value['model'])) {
             throw new LocalizedException(__('Missing key "model" in Wishlist value data'));
         }
+
         /** @var Wishlist $wishlist */
         $wishlist = $value['model'];
-
         $wishlistItems = $this->getWishListItems($wishlist);
+        $itemProductIds = [];
+
+        /** @var Item $item */
+        foreach ($wishlistItems as $item) {
+            $itemProductIds[$item->getId()] = $item->getProductId();
+        }
+
+        $wishlistProducts = $this->getWishlistProducts($wishlistItems, $info);
 
         $data = [];
         foreach ($wishlistItems as $wishlistItem) {
+            $wishlistItemId = $wishlistItem->getId();
+            $itemProduct = $wishlistProducts[$itemProductIds[$wishlistItemId]];
+
             $data[] = [
-                'id' => $wishlistItem->getId(),
+                'id' => $wishlistItemId,
                 'qty' => $wishlistItem->getData('qty'),
                 'sku' => $this->getWishListItemSku($wishlistItem),
                 'description' => $wishlistItem->getDescription(),
                 'added_at' => $wishlistItem->getAddedAt(),
                 'model' => $wishlistItem,
+                'product' => $itemProduct
             ];
         }
 
@@ -96,13 +149,46 @@ class WishlistItemsResolver implements ResolverInterface
     }
 
     /**
-     * Get wishlist items
+     * Collect wishlist item products
+     *
+     * @param array $itemProductIds
+     * @param ResolveInfo $info
+     * @return array
+     */
+    protected function getWishlistProducts(
+        array $itemProductIds,
+        ResolveInfo $info
+    ) {
+        $itemProductIds = [];
+
+        /** @var Collection $collection */
+        $collection = $this->collectionFactory->create();
+        $collection->addIdFilter(array_values($itemProductIds));
+
+        $this->collectionProcessor->process(
+            $collection,
+            $this->searchCriteriaBuilder->create(),
+            $this->getFieldsFromProductInfo($info, 'items/product')
+        );
+
+        $items = $collection->getItems();
+
+        return $this->productPostProcessor->process(
+            $items,
+            'items/product',
+            $info
+        );
+    }
+
+    /**
+     * Get wish-list items
      *
      * @param Wishlist $wishlist
      * @return Item[]
      */
-    private function getWishListItems(Wishlist $wishlist): array
-    {
+    protected function getWishListItems(
+        Wishlist $wishlist
+    ): array {
         /** @var WishlistItemCollection $collection */
         $collection = $this->wishlistItemsFactory->create();
         $collection
@@ -116,12 +202,15 @@ class WishlistItemsResolver implements ResolverInterface
     }
 
     /**
-     * Get wishlist item's sku
+     * Get wish-list item's sku
      *
+     * @param Item $wishlistItem
      * @return string
+     * @throws LocalizedException
      */
-    private function getWishListItemSku($wishlistItem): string
-    {
+    protected function getWishListItemSku(
+        Item $wishlistItem
+    ): string {
         $product = $wishlistItem->getProduct();
 
         if ($product->getTypeId() === Configurable::TYPE_CODE) {
