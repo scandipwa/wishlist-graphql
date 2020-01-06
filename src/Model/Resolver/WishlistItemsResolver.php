@@ -30,16 +30,16 @@ use Magento\Wishlist\Model\Item;
 use Magento\Wishlist\Model\ResourceModel\Item\Collection as WishlistItemCollection;
 use Magento\Wishlist\Model\ResourceModel\Item\CollectionFactory as WishlistItemCollectionFactory;
 use Magento\Wishlist\Model\Wishlist;
-use ScandiPWA\Performance\Model\Resolver\ProductPostProcessor;
+use ScandiPWA\Performance\Model\Resolver\Products\DataPostProcessor;
 use Magento\Catalog\Model\ResourceModel\Product\CollectionFactory as ProductCollectionFactory;
-use ScandiPWA\Performance\Model\Resolver\Products\PostProcessorTrait;
+use ScandiPWA\Performance\Model\Resolver\ResolveInfoFieldsTrait;
 
 /**
  * Fetches the Wish-list Items data according to the GraphQL schema
  */
 class WishlistItemsResolver implements ResolverInterface
 {
-    use PostProcessorTrait;
+    use ResolveInfoFieldsTrait;
 
     /**
      * @var WishlistItemCollectionFactory
@@ -57,7 +57,7 @@ class WishlistItemsResolver implements ResolverInterface
     protected $productFactory;
 
     /**
-     * @var ProductPostProcessor
+     * @var DataPostProcessor
      */
     protected $productPostProcessor;
 
@@ -80,7 +80,7 @@ class WishlistItemsResolver implements ResolverInterface
      * @param WishlistItemCollectionFactory $wishlistItemsFactory
      * @param StoreManagerInterface $storeManager
      * @param ProductFactory $productFactory
-     * @param ProductPostProcessor $productPostProcessor
+     * @param DataPostProcessor $productPostProcessor
      * @param SearchCriteriaBuilder $searchCriteriaBuilder
      * @param CollectionProcessorInterface $collectionProcessor
      * @param ProductCollectionFactory $collectionFactory
@@ -89,7 +89,7 @@ class WishlistItemsResolver implements ResolverInterface
         WishlistItemCollectionFactory $wishlistItemsFactory,
         StoreManagerInterface $storeManager,
         ProductFactory $productFactory,
-        ProductPostProcessor $productPostProcessor,
+        DataPostProcessor $productPostProcessor,
         SearchCriteriaBuilder $searchCriteriaBuilder,
         CollectionProcessorInterface $collectionProcessor,
         ProductCollectionFactory $collectionFactory
@@ -127,12 +127,16 @@ class WishlistItemsResolver implements ResolverInterface
             $itemProductIds[$item->getId()] = $item->getProductId();
         }
 
-        $wishlistProducts = $this->getWishlistProducts($wishlistItems, $info);
+        $wishlistProducts = $this->getWishlistProducts(
+            $itemProductIds,
+            $info
+        );
 
         $data = [];
         foreach ($wishlistItems as $wishlistItem) {
             $wishlistItemId = $wishlistItem->getId();
-            $itemProduct = $wishlistProducts[$itemProductIds[$wishlistItemId]];
+            $wishlistProductId = $itemProductIds[$wishlistItemId];
+            $itemProduct = $wishlistProducts[$wishlistProductId];
 
             $data[] = [
                 'id' => $wishlistItemId,
@@ -159,8 +163,6 @@ class WishlistItemsResolver implements ResolverInterface
         array $itemProductIds,
         ResolveInfo $info
     ) {
-        $itemProductIds = [];
-
         /** @var Collection $collection */
         $collection = $this->collectionFactory->create();
         $collection->addIdFilter(array_values($itemProductIds));
