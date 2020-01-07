@@ -1,38 +1,39 @@
 {
-    "name": "scandipwa/wishlist-graphql",
-    "description": "N/A",
-    "type": "magento2-module",
-    "require": {
-        "magento/magento2-base": "^2.3.1"
+  "name": "scandipwa/wishlist-graphql",
+  "description": "N/A",
+  "type": "magento2-module",
+  "require": {
+    "magento/magento2-base": "^2.3.1",
+    "scandipwa/performance": "^1.0"
+  },
+  "support": {
+    "source": "https://github.com/scandipwa/wishlist-graphql",
+    "email": "info@scandiweb.com"
+  },
+  "authors": [
+    {
+      "name": "Anna Bicevska",
+      "email": "anna.bicevska@scandiweb.com"
     },
-    "support": {
-        "source": "https://github.com/scandipwa/wishlist-graphql",
-        "email": "info@scandiweb.com"
+    {
+      "name": "Alfreds Genkins",
+      "email": "alfreds@scandiweb.com"
     },
-    "authors": [
-        {
-            "name": "Anna Bicevska",
-            "email": "anna.bicevska@scandiweb.com"
-        },
-        {
-          "name": "Alfreds Genkins",
-          "email": "alfreds@scandiweb.com"
-        },
-        {
-          "name": "Artjoms Travkovs",
-          "email": "artjoms.travkovs@scandiweb.com"
-        }
-    ],
-    "license": [
-      "OSL-3.0",
-      "AFL-3.0"
-    ],
-    "autoload": {
-      "files": [
-        "src/registration.php"
-      ],
-      "psr-4": {
-        "ScandiPWA\\WishlistGraphQl\\": "src"
-      }
+    {
+      "name": "Artjoms Travkovs",
+      "email": "artjoms.travkovs@scandiweb.com"
     }
+  ],
+  "license": [
+    "OSL-3.0",
+    "AFL-3.0"
+  ],
+  "autoload": {
+    "files": [
+      "src/registration.php"
+    ],
+    "psr-4": {
+      "ScandiPWA\\WishlistGraphQl\\": "src"
+    }
+  }
 }
