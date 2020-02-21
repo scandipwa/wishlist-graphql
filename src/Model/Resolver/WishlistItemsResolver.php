@@ -114,7 +114,7 @@ class WishlistItemsResolver implements ResolverInterface
         array $args = null
     ) {
         if (!isset($value['model'])) {
-            throw new LocalizedException(__('Missing key "model" in Wishlist value data'));
+            return null;
         }
 
         /** @var Wishlist $wishlist */
