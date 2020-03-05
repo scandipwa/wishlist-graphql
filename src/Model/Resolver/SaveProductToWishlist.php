@@ -17,6 +17,7 @@ namespace ScandiPWA\WishlistGraphQl\Model\Resolver;
 
 use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\ConfigurableProduct\Model\Product\Type\Configurable;
+use Magento\GiftCard\Model\Catalog\Product\Type\Giftcard;
 use Magento\Customer\Api\CustomerRepositoryInterface;
 use Magento\Framework\GraphQl\Config\Element\Field;
 use Magento\Framework\GraphQl\Exception\GraphQlAuthorizationException;
@@ -101,6 +102,7 @@ class SaveProductToWishlist implements ResolverInterface
         $quantity = $parameters['quantity'] || 1;
         $description = $parameters['description'] ?? '';
         $productOption = $parameters['product_option'] ?? [];
+        $giftCardOptions = $parameters['giftcard_options'] ?? [];
 
         $product = $this->productRepository->get($sku);
         if (!$product->isVisibleInCatalog()) {
@@ -108,13 +110,19 @@ class SaveProductToWishlist implements ResolverInterface
         }
 
         try {
-            $configurableData = [];
+            $productData = [];
             if ($product->getTypeId() === Configurable::TYPE_CODE) {
                 $configurableOptions = $this->getOptionsArray($productOption['extension_attributes']['configurable_item_options']);
-                $configurableData['super_attribute'] = $configurableOptions;
+                $productData['super_attribute'] = $configurableOptions;
             }
 
-            $wishlistItem = $wishlist->addNewItem($product, $configurableData);
+            if ($product->getTypeId() === Giftcard::TYPE_GIFTCARD) {
+                foreach ($giftCardOptions as $key => $value) {
+                    $productData[$key] = $value;
+                }
+            }
+
+            $wishlistItem = $wishlist->addNewItem($product, $productData);
             $wishlistItem->setDescription($description);
             $wishlistItem->setQty($quantity);
 

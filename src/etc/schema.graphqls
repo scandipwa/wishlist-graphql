@@ -24,8 +24,10 @@ input WishlistItemInput {
     quantity: Int @doc(description: "Quantity of the product")
     description: String @doc(description: "User description of wish list item")
     product_option: ProductOptionInput @doc(description: "Configurable product options")
+    giftcard_options: GiftCardOptionsInput @doc(description: "Giftcard product options")
 }
 
 extend type WishlistItem {
     sku: ID @doc(description: "The wish list item's SKU")
+    options: String @doc(description: "The wish list item's options")
 }

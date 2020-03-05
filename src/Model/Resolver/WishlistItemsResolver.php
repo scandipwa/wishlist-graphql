@@ -145,7 +145,8 @@ class WishlistItemsResolver implements ResolverInterface
                 'description' => $wishlistItem->getDescription(),
                 'added_at' => $wishlistItem->getAddedAt(),
                 'model' => $wishlistItem,
-                'product' => $itemProduct
+                'product' => $itemProduct,
+                'options' => $wishlistItem->getOptionByCode('info_buyRequest')->getValue()
             ];
         }
 
