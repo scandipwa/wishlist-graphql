@@ -98,7 +98,7 @@ class SaveProductToWishlist implements ResolverInterface
 
     protected function addProductToWishlist(Wishlist $wishlist, string $sku, array $parameters)
     {
-        $quantity = $parameters['quantity'] || 1;
+        $quantity = $parameters['quantity'] ?? 1;
         $description = $parameters['description'] ?? '';
         $productOption = $parameters['product_option'] ?? [];
 
