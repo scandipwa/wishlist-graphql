@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<!-- 
+<!--
 /**
  * ScandiPWA - Progressive Web App for Magento
  *
@@ -7,14 +7,22 @@
  * See LICENSE for license details.
  *
  * @license OSL-3.0 (Open Software License ("OSL") v. 3.0)
- * @package scandipwa/wishlist-graphql
- * @link https://github.com/scandipwa/wishlist-graphql
+ * @link https://github.com/scandipwa/quote-graphql
  */
 -->
-<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:Module/etc/module.xsd">
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:framework:Module/etc/module.xsd">
     <module name="ScandiPWA_WishlistGraphQl">
         <sequence>
-            <module name="Magento_WishlistGraphQl"/>
+            <module name="Magento_Framework" />
+            <module name="Magento_ConfigurableProduct" />
+            <module name="Magento_Customer" />
+            <module name="Magento_Catalog" />
+            <module name="Magento_Store" />
+            <module name="Magento_CatalogGraphqQl" />
+            <module name="Magento_Wishlist" />
+            <module name="Magento_WishlistGraphQl"/>*
+            <module name="Scandipwa_Performance" />
         </sequence>
     </module>
 </config>
