@@ -12,15 +12,15 @@
 # See COPYING.txt for license details.
 
 type Mutation {
-    saveWishlistItem(wishlistItem: WishlistItemInput!): WishlistItem @doc(description: "Saves wishlist item") @resolver(class:"\\ScandiPWA\\WishlistGraphQl\\Model\\Resolver\\SaveProductToWishlist")
-    removeProductFromWishlist(itemId: ID!): Boolean @doc(description: "Removes product from wishlist") @resolver(class:"\\ScandiPWA\\WishlistGraphQl\\Model\\Resolver\\RemoveProductFromWishlist")
-    moveWishlistToCart(guestCartId: ID, sharingCode: ID): Boolean @doc(description: "Moves items from wishlist to cart") @resolver(class:"ScandiPWA\\WishlistGraphQl\\Model\\Resolver\\MoveWishlistToCart")
-    clearWishlist: Boolean @doc(description: "Clears wishlist") @resolver(class: "ScandiPWA\\WishlistGraphQl\\Model\\Resolver\\ClearWishlist")
-    shareWishlist(input: ShareWishlistInput!): Boolean @doc(description: "Shares wishlist") @resolver(class: "ScandiPWA\\WishlistGraphQl\\Model\\Resolver\\ShareWishlist")
+    s_saveWishlistItem(wishlistItem: WishlistItemInput!): WishlistItem @doc(description: "Saves wishlist item") @resolver(class:"\\ScandiPWA\\WishlistGraphQl\\Model\\Resolver\\SaveProductToWishlist")
+    s_removeProductFromWishlist(itemId: ID!): Boolean @doc(description: "Removes product from wishlist") @resolver(class:"\\ScandiPWA\\WishlistGraphQl\\Model\\Resolver\\RemoveProductFromWishlist")
+    s_moveWishlistToCart(guestCartId: ID, sharingCode: ID): Boolean @doc(description: "Moves items from wishlist to cart") @resolver(class:"ScandiPWA\\WishlistGraphQl\\Model\\Resolver\\MoveWishlistToCart")
+    s_clearWishlist: Boolean @doc(description: "Clears wishlist") @resolver(class: "ScandiPWA\\WishlistGraphQl\\Model\\Resolver\\ClearWishlist")
+    s_shareWishlist(input: ShareWishlistInput!): Boolean @doc(description: "Shares wishlist") @resolver(class: "ScandiPWA\\WishlistGraphQl\\Model\\Resolver\\ShareWishlist")
 }
 
 type Query {
-    wishlist(sharing_code: ID): WishlistOutput @resolver(class: "\\ScandiPWA\\WishlistGraphQl\\Model\\Resolver\\WishlistResolver")
+    s_wishlist(sharing_code: ID): WishlistOutput @resolver(class: "\\ScandiPWA\\WishlistGraphQl\\Model\\Resolver\\WishlistResolver")
 }
 
 input WishlistItemInput {
