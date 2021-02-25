@@ -10,6 +10,7 @@
         "magento/module-configurable-product": "*",
         "magento/module-customer": "*",
         "magento/module-catalog": "*",
+        "magento/module-catalog-inventory": "*",
         "magento/module-store": "*",
         "magento/module-catalog-graph-ql": "*",
         "magento/module-wishlist": "*",
