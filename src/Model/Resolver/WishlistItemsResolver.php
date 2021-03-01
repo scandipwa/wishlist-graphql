@@ -216,10 +216,16 @@ class WishlistItemsResolver implements ResolverInterface
         $product = $wishlistItem->getProduct();
 
         if ($product->getTypeId() === Configurable::TYPE_CODE) {
-            $variantId = $wishlistItem->getOptionByCode('simple_product')->getValue();
-            $childProduct = $this->productFactory->create()->load($variantId);
+            $productOption = $wishlistItem->getOptionByCode('simple_product');
 
-            return $childProduct->getSku();
+            if($productOption){
+                $variantId = $productOption->getValue();
+                $childProduct = $this->productFactory->create()->load($variantId);
+                return $childProduct->getSku();
+            }
+            else {
+                return $product->getTypeInstance()->getUsedProducts($product)[0]->getSku();
+            }
         }
 
         return $product->getSku();
