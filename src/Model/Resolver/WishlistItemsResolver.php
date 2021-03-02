@@ -223,9 +223,6 @@ class WishlistItemsResolver implements ResolverInterface
                 $childProduct = $this->productFactory->create()->load($variantId);
                 return $childProduct->getSku();
             }
-            else {
-                return $product->getTypeInstance()->getUsedProducts($product)[0]->getSku();
-            }
         }
 
         return $product->getSku();
