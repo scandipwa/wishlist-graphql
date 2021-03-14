@@ -42,4 +42,14 @@ extend type WishlistOutput {
 
 extend type WishlistItem {
     sku: ID @doc(description: "The wish list item's SKU")
+    product_options: WishlistProductOptions @doc(description: "Set of additional options specific for product type")
+}
+
+type WishlistProductOptions {
+    grouped_product_qty: [WishlistGroupedProductQtyOption] @doc(description: "Grouped products only: mapping between simple product and it's quantity")
+}
+
+type WishlistGroupedProductQtyOption {
+    id: Int @doc(description: "ID of the simple product")
+    qty: Int @doc(description: "Quantity for the simple product")
 }

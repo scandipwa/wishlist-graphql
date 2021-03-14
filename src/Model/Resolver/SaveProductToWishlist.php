@@ -16,7 +16,9 @@ declare(strict_types=1);
 namespace ScandiPWA\WishlistGraphQl\Model\Resolver;
 
 use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Catalog\Model\Product;
 use Magento\ConfigurableProduct\Model\Product\Type\Configurable;
+use Magento\GroupedProduct\Model\Product\Type\Grouped;
 use Magento\Customer\Api\CustomerRepositoryInterface;
 use Magento\Framework\GraphQl\Config\Element\Field;
 use Magento\Framework\GraphQl\Exception\GraphQlAuthorizationException;
@@ -26,6 +28,7 @@ use Magento\Framework\GraphQl\Query\ResolverInterface;
 use Magento\Framework\GraphQl\Schema\Type\ResolveInfo;
 use Magento\Wishlist\Model\Wishlist;
 use Magento\Wishlist\Model\WishlistFactory;
+use Magento\Wishlist\Model\Item as WishlistItem;
 
 /**
  * Class SaveProductToWishlist
@@ -118,6 +121,11 @@ class SaveProductToWishlist implements ResolverInterface
             $wishlistItem->setDescription($description);
             $wishlistItem->setQty($quantity);
 
+            if($product->getTypeId() === Grouped::TYPE_CODE){
+                $groupedProductOptions = $productOption['extension_attributes']['grouped_options'];
+                $this->configureWishlistItemWithGroupedProduct($wishlistItem, $product, $groupedProductOptions);
+            }
+
             $wishlist->save();
         } catch (Exception $e) {
             throw new GraphQlNoSuchEntityException(__('There was an error when trying to save wishlist'));
@@ -185,5 +193,37 @@ class SaveProductToWishlist implements ResolverInterface
         }
 
         return $optionsArray;
+    }
+
+    /**
+     * Modify Wishlist item based on associated product qty
+     *
+     * @param WishlistItem $wishlistItem
+     * @param Product $product
+     */
+    protected function configureWishlistItemWithGroupedProduct(WishlistItem $wishlistItem, Product $product, array $groupedProductOptions)
+    {
+        $itemOptions = $wishlistItem->getOptionsByCode();
+        $buyRequest = $wishlistItem->getBuyRequest();
+        $superGroupInfo = $buyRequest->getData('super_group');
+
+        foreach ($itemOptions as $key => $itemOption) {
+            if (preg_match('/associated_product_\d+/', $key)) {
+                $simpleId = str_replace('associated_product_', '', $key);
+
+                $productOption = current(array_filter($groupedProductOptions, function($k) use ($simpleId) {
+                    return $k['product_id'] == (int)$simpleId;
+                }));
+                $productQty = $productOption['quantity'] ?? 0;
+                $itemOption->setValue($productQty);
+
+                $superGroupInfo[$simpleId] = (string)$productQty;
+            }
+        }
+
+        $buyRequest->setData('super_group', $superGroupInfo);
+
+        $wishlistItem->setOptions($itemOptions);
+        $wishlistItem->mergeBuyRequest($buyRequest);
     }
 }

@@ -24,6 +24,7 @@ use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\GraphQl\Config\Element\Field;
 use Magento\Framework\GraphQl\Query\ResolverInterface;
 use Magento\Framework\GraphQl\Schema\Type\ResolveInfo;
+use Magento\GroupedProduct\Model\Product\Type\Grouped;
 use Magento\Store\Api\Data\StoreInterface;
 use Magento\Store\Model\StoreManagerInterface;
 use Magento\Wishlist\Model\Item;
@@ -138,6 +139,16 @@ class WishlistItemsResolver implements ResolverInterface
             $wishlistProductId = $itemProductIds[$wishlistItemId];
             $itemProduct = $wishlistProducts[$wishlistProductId];
 
+            $productOptions = [];
+            if($wishlistItem->getProduct()->getTypeId() == Grouped::TYPE_CODE){
+                foreach($wishlistItem->getBuyRequest()['super_group'] as $id => $qty){
+                    $productOptions['grouped_product_qty'][] = [
+                        'id' => $id,
+                        'qty' => $qty
+                    ];
+                }
+            }
+
             $data[] = [
                 'id' => $wishlistItemId,
                 'qty' => $wishlistItem->getData('qty'),
@@ -145,7 +156,8 @@ class WishlistItemsResolver implements ResolverInterface
                 'description' => $wishlistItem->getDescription(),
                 'added_at' => $wishlistItem->getAddedAt(),
                 'model' => $wishlistItem,
-                'product' => $itemProduct
+                'product' => $itemProduct,
+                'product_options' => $productOptions
             ];
         }
 
