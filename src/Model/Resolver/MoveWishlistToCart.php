@@ -122,7 +122,7 @@ class MoveWishlistToCart implements ResolverInterface
         $itemsCollection = $wishlist->getItemCollection();
 
         foreach ($itemsCollection as $item) {
-            $product = $item->getProduct();
+            $product = clone $item->getProduct();
             $superAttribute = $item->getBuyRequest()->getSuperAttribute();
 
             $items[$product->getSku()] = [
