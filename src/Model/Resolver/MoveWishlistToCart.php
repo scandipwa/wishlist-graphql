@@ -15,6 +15,7 @@ declare(strict_types=1);
 
 namespace ScandiPWA\WishlistGraphQl\Model\Resolver;
 
+use Magento\Bundle\Model\Product\Type as BundleType;
 use Magento\ConfigurableProduct\Model\Product\Type\Configurable;
 use Magento\Framework\DataObject;
 use Magento\Framework\GraphQl\Config\Element\Field;
@@ -22,6 +23,7 @@ use Magento\Framework\GraphQl\Exception\GraphQlAuthorizationException;
 use Magento\Framework\GraphQl\Exception\GraphQlNoSuchEntityException;
 use Magento\Framework\GraphQl\Query\ResolverInterface;
 use Magento\Framework\GraphQl\Schema\Type\ResolveInfo;
+use Magento\Framework\Serialize\Serializer\Json;
 use Magento\Quote\Api\Data\CartInterface;
 use Magento\Quote\Api\CartManagementInterface;
 use Magento\Quote\Api\CartRepositoryInterface;
@@ -64,13 +66,17 @@ class MoveWishlistToCart implements ResolverInterface
      */
     protected $guestCartRepository;
 
+    /** @var Json */
+    private $serializer;
+
     public function __construct(
         ParamOverriderCartId $overriderCartId,
         CartRepositoryInterface $quoteRepository,
         CartManagementInterface $quoteManagement,
         GuestCartRepositoryInterface $guestCartRepository,
         WishlistFactory $wishlistFactory,
-        WishlistResourceModel $wishlistResource
+        WishlistResourceModel $wishlistResource,
+        Json $serializer
     ) {
         $this->overriderCartId = $overriderCartId;
         $this->quoteRepository = $quoteRepository;
@@ -78,6 +84,7 @@ class MoveWishlistToCart implements ResolverInterface
         $this->wishlistFactory = $wishlistFactory;
         $this->wishlistResource = $wishlistResource;
         $this->guestCartRepository = $guestCartRepository;
+        $this->serializer = $serializer;
     }
 
     /**
@@ -94,6 +101,11 @@ class MoveWishlistToCart implements ResolverInterface
             $data = [];
             if ($product->getTypeId() === Configurable::TYPE_CODE) {
                 $data['super_attribute'] = $item['super_attribute'];
+            }
+
+            if($product->getTypeId() ===  BundleType::TYPE_CODE){
+                $infoBuyJson = $product->getCustomOption('info_buyRequest')->getValue();
+                $data = $this->serializer->unserialize($infoBuyJson);
             }
 
             $buyRequest = new DataObject();

@@ -15,6 +15,7 @@ declare(strict_types=1);
 
 namespace ScandiPWA\WishlistGraphQl\Model\Resolver;
 
+use Magento\Bundle\Model\Product\Type as BundleType;
 use Magento\Catalog\Model\ProductFactory;
 use Magento\Catalog\Model\ResourceModel\Product\Collection;
 use Magento\CatalogGraphQl\Model\Resolver\Products\DataProvider\Product\CollectionProcessorInterface;
@@ -138,6 +139,19 @@ class WishlistItemsResolver implements ResolverInterface
             $wishlistProductId = $itemProductIds[$wishlistItemId];
             $itemProduct = $wishlistProducts[$wishlistProductId];
 
+            $productOptions = [];
+            if($wishlistItem->getProduct()->getTypeId() == BundleType::TYPE_CODE){
+                $buyRequest = $wishlistItem->getBuyRequest();
+
+                foreach (array_keys($buyRequest['bundle_option']) as $optionId){
+                    $productOptions['bundle_product_options'][] = [
+                        'id' => $optionId,
+                        'quantity' => $buyRequest['bundle_option_qty'][$optionId],
+                        'value' => $buyRequest['bundle_option'][$optionId]
+                    ];
+                }
+            }
+
             $data[] = [
                 'id' => $wishlistItemId,
                 'qty' => $wishlistItem->getData('qty'),
@@ -145,7 +159,8 @@ class WishlistItemsResolver implements ResolverInterface
                 'description' => $wishlistItem->getDescription(),
                 'added_at' => $wishlistItem->getAddedAt(),
                 'model' => $wishlistItem,
-                'product' => $itemProduct
+                'product' => $itemProduct,
+                'product_options' => $productOptions
             ];
         }
 

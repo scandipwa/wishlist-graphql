@@ -42,4 +42,15 @@ extend type WishlistOutput {
 
 extend type WishlistItem {
     sku: ID @doc(description: "The wish list item's SKU")
+    product_options: WishlistProductOptions @doc(description: "Set of additional options specific for product type")
+}
+
+type WishlistProductOptions {
+    bundle_product_options: [BundleProductOption] @doc(description: "Bundle products only: product configuration selected by custemer, when it was added to wishlist")
+}
+
+type BundleProductOption {
+    id: Int @doc(description: "ID of the bundle option")
+    quantity: Int @doc(description: "Quantity for the bundle option")
+    value: [String] @doc(description: "Selected value for the bundle option")
 }

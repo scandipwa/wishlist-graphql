@@ -15,6 +15,7 @@ declare(strict_types=1);
 
 namespace ScandiPWA\WishlistGraphQl\Model\Resolver;
 
+use Magento\Bundle\Model\Product\Type as BundleType;
 use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\ConfigurableProduct\Model\Product\Type\Configurable;
 use Magento\Customer\Api\CustomerRepositoryInterface;
@@ -112,6 +113,19 @@ class SaveProductToWishlist implements ResolverInterface
             if ($product->getTypeId() === Configurable::TYPE_CODE) {
                 $configurableOptions = $this->getOptionsArray($productOption['extension_attributes']['configurable_item_options']);
                 $configurableData['super_attribute'] = $configurableOptions;
+            }
+
+            if($product->getTypeId() == BundleType::TYPE_CODE){
+                $bundleOptions = $productOption['extension_attributes']['bundle_options'];
+                $configurableData['product'] = $product->getId();
+                $configurableData['qty'] = $quantity;
+                $configurableData['bundle_option'] = [];
+                $configurableData['bundle_option_qty'] = [];
+
+                foreach ($bundleOptions as $bundleOption){
+                    $configurableData['bundle_option'][$bundleOption['id']] = $bundleOption['value'];
+                    $configurableData['bundle_option_qty'][$bundleOption['id']] = $bundleOption['quantity'];
+                }
             }
 
             $wishlistItem = $wishlist->addNewItem($product, $configurableData);
