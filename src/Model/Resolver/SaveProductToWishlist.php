@@ -15,15 +15,18 @@ declare(strict_types=1);
 
 namespace ScandiPWA\WishlistGraphQl\Model\Resolver;
 
+use Magento\Bundle\Model\Product\Type as BundleType;
 use Magento\Catalog\Api\ProductRepositoryInterface;
-use Magento\ConfigurableProduct\Model\Product\Type\Configurable;
+use Magento\ConfigurableProduct\Model\Product\Type\Configurable as ConfigurableType;
 use Magento\Customer\Api\CustomerRepositoryInterface;
+use Magento\Downloadable\Model\Product\Type as DownloadableType;
 use Magento\Framework\GraphQl\Config\Element\Field;
 use Magento\Framework\GraphQl\Exception\GraphQlAuthorizationException;
 use Magento\Framework\GraphQl\Exception\GraphQlInputException;
 use Magento\Framework\GraphQl\Exception\GraphQlNoSuchEntityException;
 use Magento\Framework\GraphQl\Query\ResolverInterface;
 use Magento\Framework\GraphQl\Schema\Type\ResolveInfo;
+use Magento\GroupedProduct\Model\Product\Type\Grouped as GroupedType;
 use Magento\Wishlist\Model\Wishlist;
 use Magento\Wishlist\Model\WishlistFactory;
 
@@ -96,6 +99,52 @@ class SaveProductToWishlist implements ResolverInterface
         throw new GraphQlInputException(__('Please specify either sku or item_id'));
     }
 
+    /**
+     * @param string $type
+     * @param array $productOptions
+     * @return array|array[]
+     */
+    protected function getProductConfigurableData(string $type, array $productOptions) : array {
+        switch ($type) {
+            /** CONFIGURABLE PRODUCTS */
+            case ConfigurableType::TYPE_CODE:
+                $configurableOptions = $this->getOptionsArray($productOption['extension_attributes']['configurable_item_options']);
+                $configurableData['super_attribute'] = $configurableOptions;
+                return $configurableOptions;
+
+            /** GROUP PRODUCTS */
+            case GroupedType::TYPE_CODE:
+                return [
+                    'super_group' => $this->getOptionsArray($productOption['extension_attributes']['grouped_product_options'])
+                ];
+
+            /** DOWNLOADABLE PRODUCTS */
+            case DownloadableType::TYPE_DOWNLOADABLE:
+                $configurableData = [
+                    'links' => []
+                ];
+                $downloadableLinks = $productOption['extension_attributes']['downloadable_product_links'];
+                foreach ($downloadableLinks as $link) {
+                    $linkId = $link['link_id'];
+                    $configurableData['links'][$linkId] = $linkId;
+                }
+                return $configurableData;
+
+            /** BUNDLE PRODUCTS */
+            case BundleType::TYPE_CODE:
+                $configurableData = [];
+                $bundleOptions = $productOption['extension_attributes']['bundle_options'];
+                foreach ($bundleOptions as $bundleOption) {
+                    $optionId = $bundleOption['id'];
+                    $configurableData['bundle_option'][$optionId][] = $bundleOption['value'];
+                    $configurableData['bundle_option_qty'][$optionId] = $bundleOption['quantity'];
+                }
+
+            default:
+                return [];
+        }
+    }
+
     protected function addProductToWishlist(Wishlist $wishlist, string $sku, array $parameters)
     {
         $quantity = $parameters['quantity'] ?? 1;
@@ -108,12 +157,7 @@ class SaveProductToWishlist implements ResolverInterface
         }
 
         try {
-            $configurableData = [];
-            if ($product->getTypeId() === Configurable::TYPE_CODE) {
-                $configurableOptions = $this->getOptionsArray($productOption['extension_attributes']['configurable_item_options']);
-                $configurableData['super_attribute'] = $configurableOptions;
-            }
-
+            $configurableData = $this->getProductConfigurableData($product->getTypeId(), $productOption);
             $wishlistItem = $wishlist->addNewItem($product, $configurableData);
             $wishlistItem->setDescription($description);
             $wishlistItem->setQty($quantity);
@@ -130,13 +174,10 @@ class SaveProductToWishlist implements ResolverInterface
         return array_merge(
             $wishlistItem->getData(),
             ['model' => $wishlistItem],
-            [
-                'product' =>
-                array_merge(
-                    $wishlistItem->getProduct()->getData(),
-                    ['model' => $product]
-                ),
-            ]
+            ['product' => array_merge(
+                $wishlistItem->getProduct()->getData(),
+                ['model' => $product]
+            )]
         );
     }
 
