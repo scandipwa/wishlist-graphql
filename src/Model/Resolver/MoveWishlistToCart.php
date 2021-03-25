@@ -101,6 +101,8 @@ class MoveWishlistToCart implements ResolverInterface
 
             $quoteItem = $quote->addProduct($product, $buyRequest);
             $quoteItem->setQty($item['qty']);
+
+            $item['item']->delete();
         }
 
         try {
@@ -126,6 +128,7 @@ class MoveWishlistToCart implements ResolverInterface
             $superAttribute = $item->getBuyRequest()->getSuperAttribute();
 
             $items[$product->getSku()] = [
+                'item' => $item,
                 'qty' => $item->getQty(),
                 'product' => $product,
                 'super_attribute' => $superAttribute,
@@ -185,6 +188,8 @@ class MoveWishlistToCart implements ResolverInterface
 
                 $qty += $wishlistItem['qty'];
                 $item->setQty($qty);
+
+                $wishlistItem['item']->delete();
             }
         }
 
