@@ -202,7 +202,7 @@ class WishlistItemsResolver implements ResolverInterface
 
         $data = [];
 
-        /** @var \Magento\Wishlist\Model\Item\Interceptor $wishlistItem */
+        /** @var Item $wishlistItem */
         foreach ($wishlistItems as $wishlistItem) {
             $wishlistItemId = $wishlistItem->getId();
             $wishlistProductId = $itemProductIds[$wishlistItemId];
@@ -211,7 +211,10 @@ class WishlistItemsResolver implements ResolverInterface
 
             $price = $this->getItemPrice($wishlistItem, $type);
             $priceWithoutTax = $this->getPriceWithoutTax(
-                $price, $itemProduct['model']->getData('tax_class_id'), $storeId, $customerId
+                $price, 
+                $itemProduct['model']->getData('tax_class_id'), 
+                $storeId, 
+                $customerId
             );
 
             $buyRequestOption = $wishlistItem->getOptionByCode('info_buyRequest');
@@ -255,7 +258,10 @@ class WishlistItemsResolver implements ResolverInterface
 
         $output = [];
         foreach ($options as $option) {
-            $value = is_array($option['value']) ? join(', ', $option['value']) : $option['value'];
+            $value = is_array($option['value']) ? 
+                     join(', ', $option['value']) : 
+                     $option['value'];
+
             $output[] = [
                 'label' => $option['label'],
                 'value' => strip_tags($value)
@@ -272,7 +278,7 @@ class WishlistItemsResolver implements ResolverInterface
     protected function getItemPrice($item, $type) {
         $controller = self::PRICE_CALCULATION_MAP[$type] ?? null;
         if ($controller === null) {
-            return -1;
+            return null;
         }
 
         $configuredPrice = $this->objectManager->create($controller, [
@@ -291,8 +297,8 @@ class WishlistItemsResolver implements ResolverInterface
      * @return float
      */
     protected function getPriceWithoutTax($price, $taxClassId, $storeId, $customerId) {
-        if($price === -1) {
-            return -1;
+        if($price === null) {
+            return null;
         }
 
         // Loads rate from cache

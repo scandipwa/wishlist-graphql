@@ -139,6 +139,7 @@ class SaveProductToWishlist implements ResolverInterface
                     $configurableData['bundle_option'][$optionId][] = $bundleOption['value'];
                     $configurableData['bundle_option_qty'][$optionId] = $bundleOption['quantity'];
                 }
+                return $configurableData;
 
             default:
                 return [];
