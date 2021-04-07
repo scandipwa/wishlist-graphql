@@ -208,12 +208,13 @@ class WishlistItemsResolver implements ResolverInterface
             $wishlistProductId = $itemProductIds[$wishlistItemId];
             $itemProduct = $wishlistProducts[$wishlistProductId];
             $type = $itemProduct['type_id'];
+            $qty = $wishlistItem->getData('qty');
 
-            $price = $this->getItemPrice($wishlistItem, $type);
+            $price = $this->getItemPrice($wishlistItem, $type, $qty);
             $priceWithoutTax = $this->getPriceWithoutTax(
-                $price, 
-                $itemProduct['model']->getData('tax_class_id'), 
-                $storeId, 
+                $price,
+                $itemProduct['model']->getData('tax_class_id'),
+                $storeId,
                 $customerId
             );
 
@@ -222,7 +223,7 @@ class WishlistItemsResolver implements ResolverInterface
 
             $data[] = [
                 'id' => $wishlistItemId,
-                'qty' => $wishlistItem->getData('qty'),
+                'qty' => $qty,
                 'sku' => $this->getWishListItemSku($wishlistItem),
                 'price' => $price,
                 'price_without_tax' => $priceWithoutTax,
@@ -273,16 +274,18 @@ class WishlistItemsResolver implements ResolverInterface
     /**
      * @param Item $item
      * @param string $type
+     * @param integer $qty
      * @return float
      */
-    protected function getItemPrice($item, $type) {
+    protected function getItemPrice($item, $type, $qty) {
         $controller = self::PRICE_CALCULATION_MAP[$type] ?? null;
         if ($controller === null) {
             return null;
         }
 
         $configuredPrice = $this->objectManager->create($controller, [
-            'saleableItem' => $item->getProduct()
+            'saleableItem' => $item->getProduct(),
+            'quantity' => $qty
         ]);
         $configuredPrice->setItem($item);
 
