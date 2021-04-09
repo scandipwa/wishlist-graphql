@@ -101,16 +101,16 @@ class SaveProductToWishlist implements ResolverInterface
 
     /**
      * @param string $type
-     * @param array $productOptions
+     * @param array $productOption
      * @return array|array[]
      */
-    protected function getProductConfigurableData(string $type, array $productOptions) : array {
+    protected function getProductConfigurableData(string $type, array $productOption) : array {
         switch ($type) {
             /** CONFIGURABLE PRODUCTS */
             case ConfigurableType::TYPE_CODE:
                 $configurableOptions = $this->getOptionsArray($productOption['extension_attributes']['configurable_item_options']);
                 $configurableData['super_attribute'] = $configurableOptions;
-                return $configurableOptions;
+                return $configurableData;
 
             /** GROUP PRODUCTS */
             case GroupedType::TYPE_CODE:
@@ -123,7 +123,7 @@ class SaveProductToWishlist implements ResolverInterface
                 $configurableData = [
                     'links' => []
                 ];
-                $downloadableLinks = $productOption['extension_attributes']['downloadable_product_links'];
+                $downloadableLinks = $productOption['extension_attributes']['downloadable_product_links'] ?? [];
                 foreach ($downloadableLinks as $link) {
                     $linkId = $link['link_id'];
                     $configurableData['links'][$linkId] = $linkId;
@@ -133,7 +133,7 @@ class SaveProductToWishlist implements ResolverInterface
             /** BUNDLE PRODUCTS */
             case BundleType::TYPE_CODE:
                 $configurableData = [];
-                $bundleOptions = $productOption['extension_attributes']['bundle_options'];
+                $bundleOptions = $productOption['extension_attributes']['bundle_options'] ?? [];
                 foreach ($bundleOptions as $bundleOption) {
                     $optionId = $bundleOption['id'];
                     $configurableData['bundle_option'][$optionId][] = $bundleOption['value'];
