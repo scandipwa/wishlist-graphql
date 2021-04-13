@@ -35,7 +35,6 @@ use Magento\Wishlist\Model\WishlistFactory;
 
 class MoveWishlistToCart implements ResolverInterface
 {
-
     /**
      * @var ParamOverriderCartId
      */
@@ -107,16 +106,15 @@ class MoveWishlistToCart implements ResolverInterface
                 continue;
             }
 
-            $data = [];
-            if ($product->getTypeId() === Configurable::TYPE_CODE) {
-                $data['super_attribute'] = $item['super_attribute'];
-            }
+            $data = json_decode($item['buy_request'], true);
 
             $buyRequest = new DataObject();
             $buyRequest->setData($data);
 
             $quoteItem = $quote->addProduct($product, $buyRequest);
             $quoteItem->setQty($item['qty']);
+
+            $item['item']->delete();
         }
 
         try {
@@ -137,14 +135,18 @@ class MoveWishlistToCart implements ResolverInterface
         $items = [];
         $itemsCollection = $wishlist->getItemCollection();
 
+        /** @var \Magento\Wishlist\Model\Item\Interceptor $item */
         foreach ($itemsCollection as $item) {
             $product = $item->getProduct();
+            $buyRequest = $item->getOptionByCode('info_buyRequest');
             $superAttribute = $item->getBuyRequest()->getSuperAttribute();
 
             $items[$product->getSku()] = [
+                'item' => $item,
                 'qty' => $item->getQty(),
                 'product' => $product,
                 'super_attribute' => $superAttribute,
+                'buy_request' => $buyRequest->getValue() ?? ''
             ];
 
             if ($shouldDeleteItems) {
@@ -201,6 +203,8 @@ class MoveWishlistToCart implements ResolverInterface
 
                 $qty += $wishlistItem['qty'];
                 $item->setQty($qty);
+
+                $wishlistItem['item']->delete();
             }
         }
 
