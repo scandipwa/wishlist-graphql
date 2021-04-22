@@ -15,6 +15,8 @@ declare(strict_types=1);
 
 namespace ScandiPWA\WishlistGraphQl\Model\Resolver;
 
+use Magento\CatalogInventory\Api\Data\StockStatusInterface;
+use Magento\CatalogInventory\Api\StockStatusRepositoryInterface;
 use Magento\ConfigurableProduct\Model\Product\Type\Configurable;
 use Magento\Framework\DataObject;
 use Magento\Framework\GraphQl\Config\Element\Field;
@@ -62,6 +64,10 @@ class MoveWishlistToCart implements ResolverInterface
      * @var GuestCartRepositoryInterface
      */
     protected $guestCartRepository;
+    /**
+     * @var StockStatusRepositoryInterface
+     */
+    private StockStatusRepositoryInterface $stockStatusRepository;
 
     public function __construct(
         ParamOverriderCartId $overriderCartId,
@@ -69,7 +75,8 @@ class MoveWishlistToCart implements ResolverInterface
         CartManagementInterface $quoteManagement,
         GuestCartRepositoryInterface $guestCartRepository,
         WishlistFactory $wishlistFactory,
-        WishlistResourceModel $wishlistResource
+        WishlistResourceModel $wishlistResource,
+        StockStatusRepositoryInterface $stockStatusRepository
     ) {
         $this->overriderCartId = $overriderCartId;
         $this->quoteRepository = $quoteRepository;
@@ -77,6 +84,7 @@ class MoveWishlistToCart implements ResolverInterface
         $this->wishlistFactory = $wishlistFactory;
         $this->wishlistResource = $wishlistResource;
         $this->guestCartRepository = $guestCartRepository;
+        $this->stockStatusRepository = $stockStatusRepository;
     }
 
     /**
@@ -89,6 +97,14 @@ class MoveWishlistToCart implements ResolverInterface
     {
         foreach ($wishlistItems as $item) {
             $product = $item['product'];
+
+            $stockStatus = $this->stockStatusRepository->get($product->getId());
+            $productStockStatus = $stockStatus->getStockStatus();
+
+            // Don't add out of stock product to cart
+            if($productStockStatus === StockStatusInterface::STATUS_OUT_OF_STOCK){
+                continue;
+            }
 
             $data = json_decode($item['buy_request'], true);
 
