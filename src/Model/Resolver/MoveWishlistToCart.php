@@ -67,7 +67,7 @@ class MoveWishlistToCart implements ResolverInterface
     /**
      * @var StockStatusRepositoryInterface
      */
-    private StockStatusRepositoryInterface $stockStatusRepository;
+    protected $stockStatusRepository;
 
     public function __construct(
         ParamOverriderCartId $overriderCartId,
