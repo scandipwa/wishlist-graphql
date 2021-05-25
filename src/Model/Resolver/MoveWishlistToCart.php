@@ -16,7 +16,6 @@ declare(strict_types=1);
 namespace ScandiPWA\WishlistGraphQl\Model\Resolver;
 
 use Magento\CatalogInventory\Api\Data\StockStatusInterface;
-use Magento\CatalogInventory\Api\StockStatusRepositoryInterface;
 use Magento\ConfigurableProduct\Model\Product\Type\Configurable;
 use Magento\Framework\DataObject;
 use Magento\Framework\GraphQl\Config\Element\Field;
@@ -32,6 +31,7 @@ use Magento\Quote\Model\Webapi\ParamOverriderCartId;
 use Magento\Wishlist\Model\ResourceModel\Wishlist as WishlistResourceModel;
 use Magento\Wishlist\Model\Wishlist;
 use Magento\Wishlist\Model\WishlistFactory;
+use Magento\CatalogInventory\Model\Stock\StockItemRepository;
 
 class MoveWishlistToCart implements ResolverInterface
 {
@@ -64,10 +64,11 @@ class MoveWishlistToCart implements ResolverInterface
      * @var GuestCartRepositoryInterface
      */
     protected $guestCartRepository;
+
     /**
-     * @var StockStatusRepositoryInterface
+     * @var StockItemRepository
      */
-    protected $stockStatusRepository;
+    protected $stockItemRepository;
 
     public function __construct(
         ParamOverriderCartId $overriderCartId,
@@ -76,7 +77,7 @@ class MoveWishlistToCart implements ResolverInterface
         GuestCartRepositoryInterface $guestCartRepository,
         WishlistFactory $wishlistFactory,
         WishlistResourceModel $wishlistResource,
-        StockStatusRepositoryInterface $stockStatusRepository
+        StockItemRepository $stockItemRepository
     ) {
         $this->overriderCartId = $overriderCartId;
         $this->quoteRepository = $quoteRepository;
@@ -84,7 +85,7 @@ class MoveWishlistToCart implements ResolverInterface
         $this->wishlistFactory = $wishlistFactory;
         $this->wishlistResource = $wishlistResource;
         $this->guestCartRepository = $guestCartRepository;
-        $this->stockStatusRepository = $stockStatusRepository;
+        $this->stockItemRepository = $stockItemRepository;
     }
 
     /**
@@ -95,29 +96,56 @@ class MoveWishlistToCart implements ResolverInterface
      */
     protected function addItemsToCart(array $wishlistItems, CartInterface $quote): void
     {
+        $cartItems = $quote->getItems();
+        $addedQty = false;
+        $shouldShowError = false;
+
+        foreach ($cartItems as $item) {
+            $product = $item->getProduct();
+            $qty = $item->getQty();
+            $sku = $product->getSku();
+
+            if (array_key_exists($sku, $wishlistItems)) {
+                $wishlistItem = $wishlistItems[$sku];
+                unset($wishlistItems[$sku]);
+
+                $qty += $wishlistItem['qty'];
+                $item->setQty($qty);
+
+                $wishlistItem['item']->delete();
+                $addedQty = true;
+            }
+        }
+
+        $allItemsStatus = false;
+
         foreach ($wishlistItems as $item) {
             $product = $item['product'];
+            $data = [];
 
-            $stockStatus = $this->stockStatusRepository->get($product->getId());
-            $productStockStatus = $stockStatus->getStockStatus();
-
-            // Don't add out of stock product to cart
-            if($productStockStatus === StockStatusInterface::STATUS_OUT_OF_STOCK){
-                continue;
+            if ($product->getTypeId() === Configurable::TYPE_CODE) {
+                $data['super_attribute'] = $item['super_attribute'];
             }
-
-            $data = json_decode($item['buy_request'], true);
 
             $buyRequest = new DataObject();
             $buyRequest->setData($data);
+            $stock = $this->stockItemRepository->get($product->getId());
 
-            $quoteItem = $quote->addProduct($product, $buyRequest);
-            $quoteItem->setQty($item['qty']);
-
-            $item['item']->delete();
+            if ($stock->getIsInStock()) {
+                $quoteItem = $quote->addProduct($product, $buyRequest);
+                $quoteItem->setQty($item['qty']);
+                $item['item']->delete();
+                $allItemsStatus = true;
+            }
         }
 
+        if (!$allItemsStatus && !$addedQty) $shouldShowError = true;
+
         try {
+            if ($shouldShowError){
+                throw new GraphQlInputException("error");
+            }
+
             $this->quoteRepository->save($quote);
         } catch (Exception $e) {
             throw new GraphQlNoSuchEntityException(__('There was an error when trying to save wishlist items to cart'));
@@ -172,11 +200,13 @@ class MoveWishlistToCart implements ResolverInterface
 
         if (!$guestCartId) {
             $customerId = $context->getUserId();
+
             if ($customerId === null || $customerId === 0) {
                 throw new GraphQlAuthorizationException(__('User not found'));
             }
 
             $cart = $this->quoteManagement->getCartForCustomer($customerId);
+
         } else {
             $cart = $this->guestCartRepository->get($guestCartId);
         }
@@ -190,23 +220,6 @@ class MoveWishlistToCart implements ResolverInterface
         }
 
         $wishlistItems = $this->getWishlistItems($wishlist, !!$sharingCode);
-        $cartItems = $cart->getItems();
-
-        foreach ($cartItems as $item) {
-            $product = $item->getProduct();
-            $qty = $item->getQty();
-            $sku = $product->getSku();
-
-            if (array_key_exists($sku, $wishlistItems)) {
-                $wishlistItem = $wishlistItems[$sku];
-                unset($wishlistItems[$sku]);
-
-                $qty += $wishlistItem['qty'];
-                $item->setQty($qty);
-
-                $wishlistItem['item']->delete();
-            }
-        }
 
         $this->addItemsToCart($wishlistItems, $cart);
 
