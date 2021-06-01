@@ -97,7 +97,7 @@ class MoveWishlistToCart implements ResolverInterface
     protected function addItemsToCart(array $wishlistItems, CartInterface $quote): void
     {
         $cartItems = $quote->getItems();
-        $addedQty = false;
+        $qtyGotChanged = false;
         $shouldShowError = false;
 
         foreach ($cartItems as $item) {
@@ -113,11 +113,11 @@ class MoveWishlistToCart implements ResolverInterface
                 $item->setQty($qty);
 
                 $wishlistItem['item']->delete();
-                $addedQty = true;
+                $qtyGotChanged = true;
             }
         }
 
-        $allItemsStatus = false;
+        $atLeastOneProductAdded = false;
 
         foreach ($wishlistItems as $item) {
             $product = $item['product'];
@@ -135,15 +135,15 @@ class MoveWishlistToCart implements ResolverInterface
                 $quoteItem = $quote->addProduct($product, $buyRequest);
                 $quoteItem->setQty($item['qty']);
                 $item['item']->delete();
-                $allItemsStatus = true;
+                $atLeastOneProductAdded = true;
             }
         }
 
-        if (!$allItemsStatus && !$addedQty) $shouldShowError = true;
+        if (!$atLeastOneProductAdded && !$qtyGotChanged) $shouldShowError = true;
 
         try {
             if ($shouldShowError){
-                throw new GraphQlInputException("error");
+                throw new GraphQlInputException(__('Could not save any wishlist items to cart'));
             }
 
             $this->quoteRepository->save($quote);
