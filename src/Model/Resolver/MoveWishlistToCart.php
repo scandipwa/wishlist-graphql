@@ -120,7 +120,7 @@ class MoveWishlistToCart implements ResolverInterface
         try {
             $this->quoteRepository->save($quote);
         } catch (Exception $e) {
-            throw new GraphQlNoSuchEntityException(__('There was an error when trying to save wishlist items to cart'));
+            throw new GraphQlNoSuchEntityException(__('Failed to add items to cart'));
         }
     }
 
