@@ -15,37 +15,35 @@ declare(strict_types=1);
 
 namespace ScandiPWA\WishlistGraphQl\Model\Resolver;
 
+use Magento\Bundle\Helper\Catalog\Product\Configuration as BundleOptions;
 use Magento\Bundle\Model\Product\Type as BundleType;
+use Magento\Catalog\Helper\Product\Configuration as ProductOptions;
 use Magento\Catalog\Model\ProductFactory;
 use Magento\Catalog\Model\ResourceModel\Product\Collection;
-use Magento\Catalog\Pricing\Price\ConfiguredPriceInterface;
+use Magento\Catalog\Model\ResourceModel\Product\CollectionFactory as ProductCollectionFactory;
 use Magento\CatalogGraphQl\Model\Resolver\Products\DataProvider\Product\CollectionProcessorInterface;
 use Magento\ConfigurableProduct\Model\Product\Type\Configurable as ConfigurableType;
-use Magento\GroupedProduct\Model\Product\Type\Grouped as GroupedType;
+use Magento\Downloadable\Helper\Catalog\Product\Configuration as DownloadableOptions;
 use Magento\Downloadable\Model\Product\Type as DownloadableType;
 use Magento\Framework\Api\SearchCriteriaBuilder;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\GraphQl\Config\Element\Field;
 use Magento\Framework\GraphQl\Query\ResolverInterface;
 use Magento\Framework\GraphQl\Schema\Type\ResolveInfo;
+use Magento\Framework\ObjectManagerInterface;
+use Magento\GroupedProduct\Model\Product\Type\Grouped as GroupedType;
+use Magento\GroupedProduct\Pricing\Price\ConfiguredPrice as GroupedPrice;
 use Magento\Store\Api\Data\StoreInterface;
 use Magento\Store\Model\StoreManagerInterface;
+use Magento\Tax\Api\TaxCalculationInterface;
 use Magento\Wishlist\Model\Item;
 use Magento\Wishlist\Model\ResourceModel\Item\Collection as WishlistItemCollection;
 use Magento\Wishlist\Model\ResourceModel\Item\CollectionFactory as WishlistItemCollectionFactory;
 use Magento\Wishlist\Model\Wishlist;
-use ScandiPWA\Performance\Model\Resolver\Products\DataPostProcessor;
-use Magento\Catalog\Model\ResourceModel\Product\CollectionFactory as ProductCollectionFactory;
-use ScandiPWA\Performance\Model\Resolver\ResolveInfoFieldsTrait;
-use Magento\GroupedProduct\Pricing\Price\ConfiguredPrice as GroupedPrice;
 use Magento\Wishlist\Pricing\ConfiguredPrice\ConfigurableProduct as ConfigurablePrice;
 use Magento\Wishlist\Pricing\ConfiguredPrice\Downloadable as DownloadablePrice;
-use Magento\Bundle\Pricing\Price\ConfiguredPrice as BundlePrice;
-use Magento\Framework\ObjectManagerInterface;
-use Magento\Tax\Api\TaxCalculationInterface;
-use Magento\Catalog\Helper\Product\Configuration as ProductOptions;
-use Magento\Downloadable\Helper\Catalog\Product\Configuration as DownloadableOptions;
-use Magento\Bundle\Helper\Catalog\Product\Configuration as BundleOptions;
+use ScandiPWA\Performance\Model\Resolver\Products\DataPostProcessor;
+use ScandiPWA\Performance\Model\Resolver\ResolveInfoFieldsTrait;
 
 /**
  * Fetches the Wish-list Items data according to the GraphQL schema
@@ -63,67 +61,67 @@ class WishlistItemsResolver implements ResolverInterface
     /**
      * @var WishlistItemCollectionFactory
      */
-    protected $wishlistItemsFactory;
+    protected WishlistItemCollectionFactory $wishlistItemsFactory;
 
     /**
      * @var StoreManagerInterface
      */
-    protected $storeManager;
+    protected StoreManagerInterface $storeManager;
 
     /**
      * @var ProductFactory
      */
-    protected $productFactory;
+    protected ProductFactory $productFactory;
 
     /**
      * @var DataPostProcessor
      */
-    protected $productPostProcessor;
+    protected DataPostProcessor $productPostProcessor;
 
     /**
      * @var CollectionProcessorInterface
      */
-    protected $collectionProcessor;
+    protected CollectionProcessorInterface $collectionProcessor;
 
     /**
      * @var SearchCriteriaBuilder
      */
-    protected $searchCriteriaBuilder;
+    protected SearchCriteriaBuilder $searchCriteriaBuilder;
 
     /**
      * @var ProductCollectionFactory
      */
-    protected $collectionFactory;
+    protected ProductCollectionFactory $collectionFactory;
 
     /**
      * @var ObjectManagerInterface
      */
-    protected $objectManager;
+    protected ObjectManagerInterface $objectManager;
 
     /**
      * @var TaxCalculationInterface
      */
-    protected $taxCalculator;
+    protected TaxCalculationInterface $taxCalculator;
 
     /**
      * @var ProductOptions
      */
-    protected $productOptions;
+    protected ProductOptions $productOptions;
 
     /**
      * @var BundleOptions
      */
-    protected $bundleOptions;
+    protected BundleOptions $bundleOptions;
 
     /**
      * @var DownloadableOptions
      */
-    protected $downloadableOptions;
+    protected DownloadableOptions $downloadableOptions;
 
     /**
      * @var array
      */
-    protected $taxRateCache = [];
+    protected array $taxRateCache = [];
 
     /**
      * WishlistItemsResolver constructor.
@@ -187,7 +185,6 @@ class WishlistItemsResolver implements ResolverInterface
         $wishlistItems = $this->getWishListItems($wishlist);
         $itemProductIds = [];
 
-        /** @var Item $item */
         foreach ($wishlistItems as $item) {
             $itemProductIds[$item->getId()] = $item->getProductId();
         }
@@ -197,12 +194,8 @@ class WishlistItemsResolver implements ResolverInterface
             $info
         );
 
-        $customerId = $wishlist->getCustomerId();
-        $storeId = $wishlist->getStore()->getId();
-
         $data = [];
 
-        /** @var Item $wishlistItem */
         foreach ($wishlistItems as $wishlistItem) {
             $wishlistItemId = $wishlistItem->getId();
             $wishlistProductId = $itemProductIds[$wishlistItemId];
@@ -210,23 +203,20 @@ class WishlistItemsResolver implements ResolverInterface
             $type = $itemProduct['type_id'];
             $qty = $wishlistItem->getData('qty');
 
-            $price = $this->getItemPrice($wishlistItem, $type, $qty);
-            $priceWithoutTax = $this->getPriceWithoutTax(
-                $price,
-                $itemProduct['model']->getData('tax_class_id'),
-                $storeId,
-                $customerId
-            );
-
             $buyRequestOption = $wishlistItem->getOptionByCode('info_buyRequest');
             $options = $this->getItemOptions($wishlistItem, $type);
+
+            $product = $wishlistItem->getProduct();
+
+            $productPriceIncTax = $product->getPriceInfo()->getPrice('final_price')->getMinimalPrice()->getValue();
+            $productPriceExcTax = $product->getPriceInfo()->getPrice('final_price')->getMinimalPrice()->getValue('tax');
 
             $data[] = [
                 'id' => $wishlistItemId,
                 'qty' => $qty,
                 'sku' => $this->getWishListItemSku($wishlistItem),
-                'price' => $price,
-                'price_without_tax' => $priceWithoutTax,
+                'price' => $productPriceIncTax,
+                'price_without_tax' => $productPriceExcTax,
                 'buy_request' => $buyRequestOption->getValue() ?? '',
                 'description' => $wishlistItem->getDescription(),
                 'added_at' => $wishlistItem->getAddedAt(),
@@ -244,7 +234,8 @@ class WishlistItemsResolver implements ResolverInterface
      * @param $type
      * @return array
      */
-    protected function getItemOptions($item, $type) {
+    protected function getItemOptions($item, $type)
+    {
         $options = [];
         switch ($type) {
             case BundleType::TYPE_CODE:
@@ -259,8 +250,8 @@ class WishlistItemsResolver implements ResolverInterface
 
         $output = [];
         foreach ($options as $option) {
-            $value = is_array($option['value']) ? 
-                     join(', ', $option['value']) : 
+            $value = is_array($option['value']) ?
+                     join(', ', $option['value']) :
                      $option['value'];
 
             $output[] = [
@@ -277,7 +268,8 @@ class WishlistItemsResolver implements ResolverInterface
      * @param integer $qty
      * @return float
      */
-    protected function getItemPrice($item, $type, $qty) {
+    protected function getItemPrice($item, $type, $qty)
+    {
         $controller = self::PRICE_CALCULATION_MAP[$type] ?? null;
         if ($controller === null) {
             return null;
@@ -290,33 +282,6 @@ class WishlistItemsResolver implements ResolverInterface
         $configuredPrice->setItem($item);
 
         return $configuredPrice->getValue();
-    }
-
-    /**
-     * @param $price
-     * @param $taxClassId
-     * @param $storeId
-     * @param $customerId
-     * @return float
-     */
-    protected function getPriceWithoutTax($price, $taxClassId, $storeId, $customerId) {
-        if($price === null) {
-            return null;
-        }
-
-        // Loads rate from cache
-        if(isset($this->taxRateCache[$taxClassId])) {
-            return $price * $this->taxRateCache[$taxClassId];
-        }
-
-        // Calculates new rate
-        $rate = 1 - $this->taxCalculator->getCalculatedRate($taxClassId, $customerId, $storeId);
-
-        // Stores into cache
-        $this->taxRateCache[$taxClassId] = $rate;
-
-
-        return $price * $this->taxRateCache[$taxClassId];
     }
 
     /**
@@ -385,7 +350,7 @@ class WishlistItemsResolver implements ResolverInterface
         if ($product->getTypeId() === ConfigurableType::TYPE_CODE) {
             $productOption = $wishlistItem->getOptionByCode('simple_product');
 
-            if($productOption){
+            if ($productOption) {
                 $variantId = $productOption->getValue();
                 $childProduct = $this->productFactory->create()->load($variantId);
                 return $childProduct->getSku();
