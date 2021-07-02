@@ -61,67 +61,67 @@ class WishlistItemsResolver implements ResolverInterface
     /**
      * @var WishlistItemCollectionFactory
      */
-    protected $wishlistItemsFactory;
+    protected WishlistItemCollectionFactory $wishlistItemsFactory;
 
     /**
      * @var StoreManagerInterface
      */
-    protected $storeManager;
+    protected StoreManagerInterface $storeManager;
 
     /**
      * @var ProductFactory
      */
-    protected $productFactory;
+    protected ProductFactory $productFactory;
 
     /**
      * @var DataPostProcessor
      */
-    protected $productPostProcessor;
+    protected DataPostProcessor $productPostProcessor;
 
     /**
      * @var CollectionProcessorInterface
      */
-    protected $collectionProcessor;
+    protected CollectionProcessorInterface $collectionProcessor;
 
     /**
      * @var SearchCriteriaBuilder
      */
-    protected $searchCriteriaBuilder;
+    protected SearchCriteriaBuilder $searchCriteriaBuilder;
 
     /**
      * @var ProductCollectionFactory
      */
-    protected $collectionFactory;
+    protected ProductCollectionFactory $collectionFactory;
 
     /**
      * @var ObjectManagerInterface
      */
-    protected $objectManager;
+    protected ObjectManagerInterface $objectManager;
 
     /**
      * @var TaxCalculationInterface
      */
-    protected $taxCalculator;
+    protected TaxCalculationInterface $taxCalculator;
 
     /**
      * @var ProductOptions
      */
-    protected $productOptions;
+    protected ProductOptions $productOptions;
 
     /**
      * @var BundleOptions
      */
-    protected $bundleOptions;
+    protected BundleOptions $bundleOptions;
 
     /**
      * @var DownloadableOptions
      */
-    protected $downloadableOptions;
+    protected DownloadableOptions $downloadableOptions;
 
     /**
      * @var array
      */
-    protected $taxRateCache = [];
+    protected array $taxRateCache = [];
 
     /**
      * WishlistItemsResolver constructor.
@@ -185,7 +185,6 @@ class WishlistItemsResolver implements ResolverInterface
         $wishlistItems = $this->getWishListItems($wishlist);
         $itemProductIds = [];
 
-        /** @var Item $item */
         foreach ($wishlistItems as $item) {
             $itemProductIds[$item->getId()] = $item->getProductId();
         }
@@ -195,26 +194,14 @@ class WishlistItemsResolver implements ResolverInterface
             $info
         );
 
-        $customerId = $wishlist->getCustomerId();
-        $storeId = $wishlist->getStore()->getId();
-
         $data = [];
 
-        /** @var Item $wishlistItem */
         foreach ($wishlistItems as $wishlistItem) {
             $wishlistItemId = $wishlistItem->getId();
             $wishlistProductId = $itemProductIds[$wishlistItemId];
             $itemProduct = $wishlistProducts[$wishlistProductId];
             $type = $itemProduct['type_id'];
             $qty = $wishlistItem->getData('qty');
-
-            $price = $this->getItemPrice($wishlistItem, $type, $qty);
-            $priceWithoutTax = $this->getPriceWithoutTax(
-                $price,
-                $itemProduct['model']->getData('tax_class_id'),
-                $storeId,
-                $customerId
-            );
 
             $buyRequestOption = $wishlistItem->getOptionByCode('info_buyRequest');
             $options = $this->getItemOptions($wishlistItem, $type);
@@ -295,33 +282,6 @@ class WishlistItemsResolver implements ResolverInterface
         $configuredPrice->setItem($item);
 
         return $configuredPrice->getValue();
-    }
-
-    /**
-     * @param $price
-     * @param $taxClassId
-     * @param $storeId
-     * @param $customerId
-     * @return float
-     */
-    protected function getPriceWithoutTax($price, $taxClassId, $storeId, $customerId)
-    {
-        if ($price === null) {
-            return null;
-        }
-
-        // Loads rate from cache
-        if (isset($this->taxRateCache[$taxClassId])) {
-            return $price * $this->taxRateCache[$taxClassId];
-        }
-
-        // Calculates new rate
-        $rate = 1 - $this->taxCalculator->getCalculatedRate($taxClassId, $customerId, $storeId);
-
-        // Stores into cache
-        $this->taxRateCache[$taxClassId] = $rate;
-
-        return $price * $this->taxRateCache[$taxClassId];
     }
 
     /**
