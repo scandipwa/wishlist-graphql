@@ -199,6 +199,11 @@ class WishlistItemsResolver implements ResolverInterface
         foreach ($wishlistItems as $wishlistItem) {
             $wishlistItemId = $wishlistItem->getId();
             $wishlistProductId = $itemProductIds[$wishlistItemId];
+
+            if (!isset($wishlistProducts[$wishlistProductId])) {
+                continue;
+            }
+
             $itemProduct = $wishlistProducts[$wishlistProductId];
             $type = $itemProduct['type_id'];
             $qty = $wishlistItem->getData('qty');
