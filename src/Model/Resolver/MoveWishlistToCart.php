@@ -101,9 +101,9 @@ class MoveWishlistToCart implements ResolverInterface
             $stockStatus = $this->stockStatusRepository->get($product->getId());
             $productStockStatus = $stockStatus->getStockStatus();
 
-            // Don't add out of stock product to cart
+            // If product is out of stock outputs error message
             if($productStockStatus === StockStatusInterface::STATUS_OUT_OF_STOCK){
-                continue;
+                throw new GraphQlNoSuchEntityException(__('One or more items are out of stock'));
             }
 
             $data = json_decode($item['buy_request'], true);
@@ -120,7 +120,7 @@ class MoveWishlistToCart implements ResolverInterface
         try {
             $this->quoteRepository->save($quote);
         } catch (Exception $e) {
-            throw new GraphQlNoSuchEntityException(__('There was an error when trying to save wishlist items to cart'));
+            throw new GraphQlNoSuchEntityException(__('Failed to add items to cart'));
         }
     }
 
