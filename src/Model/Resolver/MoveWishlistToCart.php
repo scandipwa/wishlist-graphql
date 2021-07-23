@@ -21,6 +21,7 @@ use Magento\ConfigurableProduct\Model\Product\Type\Configurable;
 use Magento\Framework\DataObject;
 use Magento\Framework\GraphQl\Config\Element\Field;
 use Magento\Framework\GraphQl\Exception\GraphQlAuthorizationException;
+use Magento\Framework\GraphQl\Exception\GraphQlInputException;
 use Magento\Framework\GraphQl\Exception\GraphQlNoSuchEntityException;
 use Magento\Framework\GraphQl\Query\ResolverInterface;
 use Magento\Framework\GraphQl\Schema\Type\ResolveInfo;
@@ -128,7 +129,7 @@ class MoveWishlistToCart implements ResolverInterface
         }
 
         if (count($errors) > 0) {
-            throw new \Exception(json_encode($errors));
+            throw new GraphQlInputException(__(json_encode($errors)));
         }
 
         try {
