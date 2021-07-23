@@ -21,6 +21,7 @@ use Magento\ConfigurableProduct\Model\Product\Type\Configurable;
 use Magento\Framework\DataObject;
 use Magento\Framework\GraphQl\Config\Element\Field;
 use Magento\Framework\GraphQl\Exception\GraphQlAuthorizationException;
+use Magento\Framework\GraphQl\Exception\GraphQlInputException;
 use Magento\Framework\GraphQl\Exception\GraphQlNoSuchEntityException;
 use Magento\Framework\GraphQl\Query\ResolverInterface;
 use Magento\Framework\GraphQl\Schema\Type\ResolveInfo;
@@ -95,6 +96,8 @@ class MoveWishlistToCart implements ResolverInterface
      */
     protected function addItemsToCart(array $wishlistItems, CartInterface $quote): void
     {
+        $errors = [];
+
         foreach ($wishlistItems as $item) {
             $product = $item['product'];
 
@@ -112,9 +115,21 @@ class MoveWishlistToCart implements ResolverInterface
             $buyRequest->setData($data);
 
             $quoteItem = $quote->addProduct($product, $buyRequest);
-            $quoteItem->setQty($item['qty']);
 
-            $item['item']->delete();
+            if (is_string($quoteItem)) {
+                $msg = $quoteItem[strlen($quoteItem) - 1] === '.'
+                    ? substr($quoteItem, 0, -1)
+                    : $quoteItem;
+
+                $errors[] = $msg . ' for "' . $product->getName() . '"';
+            } else {
+                $quoteItem->setQty($item['qty']);
+                $item['item']->delete();
+            }
+        }
+
+        if (count($errors) > 0) {
+            throw new GraphQlInputException(__(json_encode($errors)));
         }
 
         try {
