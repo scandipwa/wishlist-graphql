@@ -95,6 +95,8 @@ class MoveWishlistToCart implements ResolverInterface
      */
     protected function addItemsToCart(array $wishlistItems, CartInterface $quote): void
     {
+        $errors = [];
+
         foreach ($wishlistItems as $item) {
             $product = $item['product'];
 
@@ -112,9 +114,21 @@ class MoveWishlistToCart implements ResolverInterface
             $buyRequest->setData($data);
 
             $quoteItem = $quote->addProduct($product, $buyRequest);
-            $quoteItem->setQty($item['qty']);
 
-            $item['item']->delete();
+            if (is_string($quoteItem)) {
+                $msg = $quoteItem[strlen($quoteItem) - 1] === '.'
+                    ? substr($quoteItem, 0, -1)
+                    : $quoteItem;
+
+                $errors[] = $msg . ' for "' . $product->getName() . '"';
+            } else {
+                $quoteItem->setQty($item['qty']);
+                $item['item']->delete();
+            }
+        }
+
+        if (count($errors) > 0) {
+            throw new \Exception(json_encode($errors));
         }
 
         try {
