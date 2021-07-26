@@ -101,30 +101,34 @@ class MoveWishlistToCart implements ResolverInterface
         foreach ($wishlistItems as $item) {
             $product = $item['product'];
 
-            $stockStatus = $this->stockStatusRepository->get($product->getId());
-            $productStockStatus = $stockStatus->getStockStatus();
+            try {
+                $stockStatus = $this->stockStatusRepository->get($product->getId());
+                $productStockStatus = $stockStatus->getStockStatus();
 
-            // If product is out of stock outputs error message
-            if($productStockStatus === StockStatusInterface::STATUS_OUT_OF_STOCK){
-                throw new GraphQlNoSuchEntityException(__('One or more items are out of stock'));
-            }
+                // If product is out of stock outputs error message
+                if($productStockStatus === StockStatusInterface::STATUS_OUT_OF_STOCK){
+                    throw new GraphQlNoSuchEntityException(__('One or more items are out of stock'));
+                }
 
-            $data = json_decode($item['buy_request'], true);
+                $data = json_decode($item['buy_request'], true);
 
-            $buyRequest = new DataObject();
-            $buyRequest->setData($data);
+                $buyRequest = new DataObject();
+                $buyRequest->setData($data);
 
-            $quoteItem = $quote->addProduct($product, $buyRequest);
+                $quoteItem = $quote->addProduct($product, $buyRequest);
 
-            if (is_string($quoteItem)) {
-                $msg = $quoteItem[strlen($quoteItem) - 1] === '.'
-                    ? substr($quoteItem, 0, -1)
-                    : $quoteItem;
+                if (is_string($quoteItem)) {
+                    $msg = $quoteItem[strlen($quoteItem) - 1] === '.'
+                        ? substr($quoteItem, 0, -1)
+                        : $quoteItem;
 
-                $errors[] = $msg . ' for "' . $product->getName() . '"';
-            } else {
-                $quoteItem->setQty($item['qty']);
-                $item['item']->delete();
+                    $errors[] = $msg . ' for "' . $product->getName() . '"';
+                } else {
+                    $quoteItem->setQty($item['qty']);
+                    $item['item']->delete();
+                }
+            } catch (Exception $e) {
+                $errors[] = $e->getMessage() . ' for "' . $product->getName() . '"';
             }
         }
 
