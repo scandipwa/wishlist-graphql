@@ -106,7 +106,7 @@ class MoveWishlistToCart implements ResolverInterface
                 $productStockStatus = $stockStatus->getStockStatus();
 
                 // If product is out of stock outputs error message
-                if($productStockStatus === StockStatusInterface::STATUS_OUT_OF_STOCK){
+                if ($productStockStatus === StockStatusInterface::STATUS_OUT_OF_STOCK) {
                     throw new GraphQlNoSuchEntityException(__('One or more items are out of stock'));
                 }
 
@@ -127,7 +127,7 @@ class MoveWishlistToCart implements ResolverInterface
                     $quoteItem->setQty($item['qty']);
                     $item['item']->delete();
                 }
-            } catch (Exception $e) {
+            } catch (\Exception $e) {
                 $errors[] = $e->getMessage() . ' for "' . $product->getName() . '"';
             }
         }
