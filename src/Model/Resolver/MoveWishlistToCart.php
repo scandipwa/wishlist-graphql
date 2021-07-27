@@ -118,10 +118,7 @@ class MoveWishlistToCart implements ResolverInterface
                 $quoteItem = $quote->addProduct($product, $buyRequest);
 
                 if (is_string($quoteItem)) {
-                    $msg = $quoteItem[strlen($quoteItem) - 1] === '.'
-                        ? substr($quoteItem, 0, -1)
-                        : $quoteItem;
-
+                    $msg = trim($quoteItem, '.');
                     $errors[] = $msg . ' for "' . $product->getName() . '"';
                 } else {
                     $quoteItem->setQty($item['qty']);
