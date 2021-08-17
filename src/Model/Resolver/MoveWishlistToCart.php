@@ -15,10 +15,13 @@ declare(strict_types=1);
 
 namespace ScandiPWA\WishlistGraphQl\Model\Resolver;
 
+use Magento\CatalogInventory\Api\Data\StockStatusInterface;
+use Magento\CatalogInventory\Api\StockStatusRepositoryInterface;
 use Magento\ConfigurableProduct\Model\Product\Type\Configurable;
 use Magento\Framework\DataObject;
 use Magento\Framework\GraphQl\Config\Element\Field;
 use Magento\Framework\GraphQl\Exception\GraphQlAuthorizationException;
+use Magento\Framework\GraphQl\Exception\GraphQlInputException;
 use Magento\Framework\GraphQl\Exception\GraphQlNoSuchEntityException;
 use Magento\Framework\GraphQl\Query\ResolverInterface;
 use Magento\Framework\GraphQl\Schema\Type\ResolveInfo;
@@ -33,7 +36,6 @@ use Magento\Wishlist\Model\WishlistFactory;
 
 class MoveWishlistToCart implements ResolverInterface
 {
-
     /**
      * @var ParamOverriderCartId
      */
@@ -63,6 +65,10 @@ class MoveWishlistToCart implements ResolverInterface
      * @var GuestCartRepositoryInterface
      */
     protected $guestCartRepository;
+    /**
+     * @var StockStatusRepositoryInterface
+     */
+    protected $stockStatusRepository;
 
     public function __construct(
         ParamOverriderCartId $overriderCartId,
@@ -70,7 +76,8 @@ class MoveWishlistToCart implements ResolverInterface
         CartManagementInterface $quoteManagement,
         GuestCartRepositoryInterface $guestCartRepository,
         WishlistFactory $wishlistFactory,
-        WishlistResourceModel $wishlistResource
+        WishlistResourceModel $wishlistResource,
+        StockStatusRepositoryInterface $stockStatusRepository
     ) {
         $this->overriderCartId = $overriderCartId;
         $this->quoteRepository = $quoteRepository;
@@ -78,6 +85,7 @@ class MoveWishlistToCart implements ResolverInterface
         $this->wishlistFactory = $wishlistFactory;
         $this->wishlistResource = $wishlistResource;
         $this->guestCartRepository = $guestCartRepository;
+        $this->stockStatusRepository = $stockStatusRepository;
     }
 
     /**
@@ -88,25 +96,47 @@ class MoveWishlistToCart implements ResolverInterface
      */
     protected function addItemsToCart(array $wishlistItems, CartInterface $quote): void
     {
+        $errors = [];
+
         foreach ($wishlistItems as $item) {
             $product = $item['product'];
 
-            $data = [];
-            if ($product->getTypeId() === Configurable::TYPE_CODE) {
-                $data['super_attribute'] = $item['super_attribute'];
+            try {
+                $stockStatus = $this->stockStatusRepository->get($product->getId());
+                $productStockStatus = $stockStatus->getStockStatus();
+
+                // If product is out of stock outputs error message
+                if ($productStockStatus === StockStatusInterface::STATUS_OUT_OF_STOCK) {
+                    throw new GraphQlNoSuchEntityException(__('One or more items are out of stock'));
+                }
+
+                $data = json_decode($item['buy_request'], true);
+
+                $buyRequest = new DataObject();
+                $buyRequest->setData($data);
+
+                $quoteItem = $quote->addProduct($product, $buyRequest);
+
+                if (is_string($quoteItem)) {
+                    $msg = trim($quoteItem, '.');
+                    $errors[] = $msg . ' for "' . $product->getName() . '"';
+                } else {
+                    $quoteItem->setQty($item['qty']);
+                    $item['item']->delete();
+                }
+            } catch (\Exception $e) {
+                $errors[] = $e->getMessage() . ' for "' . $product->getName() . '"';
             }
+        }
 
-            $buyRequest = new DataObject();
-            $buyRequest->setData($data);
-
-            $quoteItem = $quote->addProduct($product, $buyRequest);
-            $quoteItem->setQty($item['qty']);
+        if (count($errors) > 0) {
+            throw new GraphQlInputException(__(json_encode($errors)));
         }
 
         try {
             $this->quoteRepository->save($quote);
         } catch (Exception $e) {
-            throw new GraphQlNoSuchEntityException(__('There was an error when trying to save wishlist items to cart'));
+            throw new GraphQlNoSuchEntityException(__('Failed to add items to cart'));
         }
     }
 
@@ -121,14 +151,18 @@ class MoveWishlistToCart implements ResolverInterface
         $items = [];
         $itemsCollection = $wishlist->getItemCollection();
 
+        /** @var \Magento\Wishlist\Model\Item\Interceptor $item */
         foreach ($itemsCollection as $item) {
             $product = clone $item->getProduct();
+            $buyRequest = $item->getOptionByCode('info_buyRequest');
             $superAttribute = $item->getBuyRequest()->getSuperAttribute();
 
             $items[$product->getSku()] = [
+                'item' => $item,
                 'qty' => $item->getQty(),
                 'product' => $product,
                 'super_attribute' => $superAttribute,
+                'buy_request' => $buyRequest->getValue() ?? ''
             ];
 
             if ($shouldDeleteItems) {
@@ -185,6 +219,8 @@ class MoveWishlistToCart implements ResolverInterface
 
                 $qty += $wishlistItem['qty'];
                 $item->setQty($qty);
+
+                $wishlistItem['item']->delete();
             }
         }
 

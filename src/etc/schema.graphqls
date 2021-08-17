@@ -42,4 +42,13 @@ extend type WishlistOutput {
 
 extend type WishlistItem {
     sku: ID @doc(description: "The wish list item's SKU")
+    price: Float @doc(description: "Product price based on selected options") 
+    price_without_tax: Float @doc(description: "Product price without tax based on selected options") 
+    buy_request: String @doc(description: "Configurations to place order with selected options") 
+    options: [WishlistItemOption]
+}
+
+type WishlistItemOption {
+    label: String,
+    value: String
 }
