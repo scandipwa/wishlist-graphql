@@ -153,7 +153,7 @@ class MoveWishlistToCart implements ResolverInterface
 
         /** @var \Magento\Wishlist\Model\Item\Interceptor $item */
         foreach ($itemsCollection as $item) {
-            $product = $item->getProduct();
+            $product = clone $item->getProduct();
             $buyRequest = $item->getOptionByCode('info_buyRequest');
             $superAttribute = $item->getBuyRequest()->getSuperAttribute();
 
