@@ -52,6 +52,11 @@ class CreatorResolver implements ResolverInterface
         }
 
         $customerId = $wishlist->getCustomerId();
+
+        if (!$customerId) {
+            return null;
+        }
+
         /** @var CustomerInterface $customer */
         $customer = $this->customerRepository->getById($customerId);
 
