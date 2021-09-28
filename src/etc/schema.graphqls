@@ -37,6 +37,7 @@ input ShareWishlistInput {
 }
 
 extend type WishlistOutput {
+    id: ID @resolver(class: "\\ScandiPWA\\WishlistGraphQl\\Model\\Resolver\\Wishlist\\IdResolver")
     creators_name: String @resolver(class: "\\ScandiPWA\\WishlistGraphQl\\Model\\Resolver\\Wishlist\\CreatorResolver") @doc(description: "Name of wishlist creator")
 }
 
