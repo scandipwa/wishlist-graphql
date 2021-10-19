@@ -250,7 +250,16 @@ class WishlistItemsResolver implements ResolverInterface
                 $options = $this->downloadableOptions->getOptions($item);
                 break;
             default:
-                return $this->productOptions->getOptions($item);
+                $options = $this->productOptions->getOptions($item);
+
+                // Magento produce HTML markup as label for files. We need plain name of the file instead.
+                foreach ($options as $index => $option){
+                    if($option['option_type'] === 'file'){
+                        $options[$index]['value'] = $option['print_value'];
+                    }
+                }
+
+                return $options;
         }
 
         $output = [];
