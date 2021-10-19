@@ -24,12 +24,12 @@ use Magento\Wishlist\Model\Wishlist\Data\WishlistItem;
  */
 class CustomizableOptionDataProvider implements BuyRequestDataProviderInterface
 {
-    private const PROVIDER_OPTION_TYPE = 'custom-option';
+    const PROVIDER_OPTION_TYPE = 'custom-option';
     const QUOTE_MEDIA_PATH = 'custom_options/quote/';
     const ORDER_MEDIA_PATH = 'custom_options/order/';
 
     /**
-     * @var stringCustomizableOptionDataProvider
+     * @var string
      */
     protected $mediaPath;
 
@@ -100,7 +100,7 @@ class CustomizableOptionDataProvider implements BuyRequestDataProviderInterface
         return $result;
     }
 
-    private function getFileData($uid, $optionData) {
+    protected function getFileData($uid, $optionData) {
         try {
             $data = json_decode($optionData, true);
 
@@ -164,7 +164,7 @@ class CustomizableOptionDataProvider implements BuyRequestDataProviderInterface
      *
      * @return array
      */
-    private function flattenOptionValues(array $customizableOptionsData): array
+    protected function flattenOptionValues(array $customizableOptionsData): array
     {
         foreach ($customizableOptionsData as $optionId => $optionValue) {
             if (count($optionValue) === 1) {
@@ -181,7 +181,7 @@ class CustomizableOptionDataProvider implements BuyRequestDataProviderInterface
      * @param array $optionData
      * @return bool
      */
-    private function isProviderApplicable(array $optionData): bool
+    protected function isProviderApplicable(array $optionData): bool
     {
         return $optionData[0] === self::PROVIDER_OPTION_TYPE;
     }

@@ -254,7 +254,7 @@ class WishlistItemsResolver implements ResolverInterface
 
                 // Magento produce HTML markup as label for files. We need plain name of the file instead.
                 foreach ($options as $index => $option){
-                    if($option['option_type'] == 'file'){
+                    if($option['option_type'] === 'file'){
                         $options[$index]['value'] = $option['print_value'];
                     }
                 }
