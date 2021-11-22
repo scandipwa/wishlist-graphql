@@ -10,6 +10,7 @@
         <arguments>
             <argument name="providers" xsi:type="array">
                 <item name="customizable_option" xsi:type="object">ScandiPWA\WishlistGraphQl\Model\FileSupport\BuyRequest\CustomizableOptionDataProvider</item>
+                <item name="bundle" xsi:type="object">ScandiPWA\WishlistGraphQl\Model\FileSupport\BuyRequest\BundleDataProvider</item>
             </argument>
         </arguments>
     </type>
