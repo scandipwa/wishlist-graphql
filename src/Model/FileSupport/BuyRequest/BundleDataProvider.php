@@ -52,12 +52,11 @@ class BundleDataProvider implements BuyRequestDataProviderInterface
             }
             if ($decodeBy === 'getId') {
                 [$optionType, $optionId, $optionValueId, $optionQuantity] = $optionData;
-            }else { 
-                if ($decodeBy === 'getUid') {
+
+            } elseif ($decodeBy === 'getUid') {
                     $this->validateInput($optionData);
                     [$optionType, $optionId, $optionValueId] = $optionData;
                     $optionQuantity = $option->getValue();
-                }
             }
             if ($optionType == self::PROVIDER_OPTION_TYPE) {
                 $bundleOptionsData['bundle_option'][$optionId][] = $optionValueId;
