@@ -23,7 +23,8 @@ use Magento\Wishlist\Model\Wishlist\Data\WishlistItem;
  */
 class BundleDataProvider implements BuyRequestDataProviderInterface
 {
-    private const PROVIDER_OPTION_TYPE = 'bundle';
+    const PROVIDER_OPTION_TYPE = 'bundle';
+    const BUNDLE_OPTION_DATA_COUNT = 4; // number of bundleOption decoding elements
 
     /**
      * @inheritdoc
@@ -34,39 +35,35 @@ class BundleDataProvider implements BuyRequestDataProviderInterface
     {
         $bundleOptionsData = [];
 
-        foreach ($wishlistItem->getSelectedOptions() as $optionData) {
-            $optionData = \explode('/', base64_decode($optionData->getId()));
-
-            if ($this->isProviderApplicable($optionData) === false) {
-                continue;
-            }
-
-            [$optionType, $optionId, $optionValueId, $optionQuantity] = $optionData;
-
-            if ($optionType == self::PROVIDER_OPTION_TYPE) {
-                $bundleOptionsData['bundle_option'][$optionId][] = $optionValueId;
-                $bundleOptionsData['bundle_option_qty'][$optionId][] = $optionQuantity;
-            }
-        }
+        $this->getBundleOptionsData($wishlistItem->getSelectedOptions(), $bundleOptionsData, "getId");
         //for bundle options with custom quantity
-        foreach ($wishlistItem->getEnteredOptions() as $option) {
-            // phpcs:ignore Magento2.Functions.DiscouragedFunction
-            $optionData = \explode('/', base64_decode($option->getUid()));
-
-            if ($this->isProviderApplicable($optionData) === false) {
-                continue;
-            }
-            $this->validateInput($optionData);
-
-            [$optionType, $optionId, $optionValueId] = $optionData;
-            if ($optionType == self::PROVIDER_OPTION_TYPE) {
-                $optionQuantity = $option->getValue();
-                $bundleOptionsData['bundle_option'][$optionId][] = $optionValueId;
-                $bundleOptionsData['bundle_option_qty'][$optionId][] = $optionQuantity;
-            }
-        }
+        $this->getBundleOptionsData($wishlistItem->getEnteredOptions(), $bundleOptionsData, "getUid");
 
         return $bundleOptionsData;
+    }
+
+    protected function getBundleOptionsData($wishlistOptions, &$bundleOptionsData, $decodeBy)
+    {
+        foreach ($wishlistOptions as $option) {
+            // phpcs:ignore Magento2.Functions.DiscouragedFunction
+            $optionData = \explode('/', base64_decode($option->$decodeBy()));
+            if ($this->isProviderApplicable($optionData) === false) {
+                continue;
+            }
+            if ($decodeBy === 'getId') {
+                [$optionType, $optionId, $optionValueId, $optionQuantity] = $optionData;
+            }else { 
+                if ($decodeBy === 'getUid') {
+                    $this->validateInput($optionData);
+                    [$optionType, $optionId, $optionValueId] = $optionData;
+                    $optionQuantity = $option->getValue();
+                }
+            }
+            if ($optionType == self::PROVIDER_OPTION_TYPE) {
+                $bundleOptionsData['bundle_option'][$optionId][] = $optionValueId;
+                $bundleOptionsData['bundle_option_qty'][$optionId][] = $optionQuantity;
+            }
+        }
     }
 
     /**
@@ -75,9 +72,9 @@ class BundleDataProvider implements BuyRequestDataProviderInterface
      * @param array $optionData
      * @throws LocalizedException
      */
-    private function validateInput(array $optionData): void
+    protected function validateInput(array $optionData): void
     {
-        if (count($optionData) !== 4) {
+        if (count($optionData) !== self::BUNDLE_OPTION_DATA_COUNT) {
             $errorMessage = __('Wrong format of the entered option data');
             throw new LocalizedException($errorMessage);
         }
@@ -90,7 +87,7 @@ class BundleDataProvider implements BuyRequestDataProviderInterface
      *
      * @return bool
      */
-    private function isProviderApplicable(array $optionData): bool
+    protected function isProviderApplicable(array $optionData): bool
     {
         return $optionData[0] === self::PROVIDER_OPTION_TYPE;
     }
