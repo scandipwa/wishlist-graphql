@@ -107,7 +107,7 @@ class MoveWishlistToCart implements ResolverInterface
 
                 // If product is out of stock outputs error message
                 if ($productStockStatus === StockStatusInterface::STATUS_OUT_OF_STOCK) {
-                    throw new GraphQlNoSuchEntityException(__('One or more items are out of stock'));
+                    throw new GraphQlNoSuchEntityException(__('Item is out of stock'));
                 }
 
                 $data = json_decode($item['buy_request'], true);
