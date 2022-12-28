@@ -14,4 +14,6 @@
                 type="ScandiPWA\WishlistGraphQl\Model\Resolver\WishlistResolver"/>
     <preference for="Magento\WishlistGraphQl\Model\Resolver\WishlistItemsResolver"
                 type="ScandiPWA\WishlistGraphQl\Model\Resolver\WishlistItemsResolver"/>
+    <preference for="Magento\WishlistGraphQl\Model\Resolver\WishlistItems"
+                type="ScandiPWA\WishlistGraphQl\Model\Resolver\WishlistItemsResolver"/>
 </config>

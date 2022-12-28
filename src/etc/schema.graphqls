@@ -20,7 +20,7 @@ type Mutation {
 }
 
 type Query {
-    s_wishlist(sharing_code: ID): WishlistOutput @resolver(class: "\\ScandiPWA\\WishlistGraphQl\\Model\\Resolver\\WishlistResolver")
+    s_wishlist(sharing_code: ID): Wishlist @resolver(class: "\\ScandiPWA\\WishlistGraphQl\\Model\\Resolver\\WishlistResolver")
 }
 
 input WishlistItemInput {
@@ -36,16 +36,20 @@ input ShareWishlistInput {
     message: String @doc(description: "Sharing message")
 }
 
-extend type WishlistOutput {
+extend type Wishlist {
     id: ID @resolver(class: "\\ScandiPWA\\WishlistGraphQl\\Model\\Resolver\\Wishlist\\IdResolver")
     creators_name: String @resolver(class: "\\ScandiPWA\\WishlistGraphQl\\Model\\Resolver\\Wishlist\\CreatorResolver") @doc(description: "Name of wishlist creator")
 }
 
+extend type WishlistItems {
+    items: [WishlistItem] @doc(description: "A list of items in the wish list.")
+}
+
 extend type WishlistItem {
     sku: ID @doc(description: "The wish list item's SKU")
-    price: Float @doc(description: "Product price based on selected options") 
-    price_without_tax: Float @doc(description: "Product price without tax based on selected options") 
-    buy_request: String @doc(description: "Configurations to place order with selected options") 
+    price: Float @doc(description: "Product price based on selected options")
+    price_without_tax: Float @doc(description: "Product price without tax based on selected options")
+    buy_request: String @doc(description: "Configurations to place order with selected options")
     options: [WishlistItemOption]
 }
 
