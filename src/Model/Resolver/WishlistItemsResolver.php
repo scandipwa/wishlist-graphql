@@ -350,7 +350,7 @@ class WishlistItemsResolver implements ResolverInterface
     protected function getWishlistCollection(
         Wishlist $wishlist,
         array $args
-    ): \Magento\Wishlist\Model\ResourceModel\Item\Collection {
+    ): WishlistItemCollection {
         $currentPage = $args['currentPage'] ?? 1;
         $pageSize = $args['pageSize'] ?? 20;
 
