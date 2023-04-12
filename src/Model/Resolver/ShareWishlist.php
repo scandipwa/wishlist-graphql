@@ -29,6 +29,7 @@ use Magento\Framework\View\LayoutFactory;
 use Magento\Store\Model\StoreManagerInterface;
 use Magento\Wishlist\Model\WishlistFactory;
 use ScandiPWA\WishlistGraphQl\Model\Resolver\WishlistResolver;
+use Laminas\Validator\EmailAddress;
 
 class ShareWishlist implements ResolverInterface
 {
@@ -70,6 +71,12 @@ class ShareWishlist implements ResolverInterface
     protected $layoutFactory;
 
     /**
+     * @var EmailAddress
+     */
+    protected $emailValidator;
+
+
+    /**
      * @param Escaper $escaper
      * @param UrlInterface $url
      * @param LayoutFactory $layoutFactory
@@ -79,6 +86,7 @@ class ShareWishlist implements ResolverInterface
      * @param TransportBuilder $transportBuilder
      * @param StoreManagerInterface $storeManager
      * @param CustomerRepository $customerRepository
+     * @param EmailAddress $emailAddress
      */
     public function __construct(
         Escaper $escaper,
@@ -89,7 +97,8 @@ class ShareWishlist implements ResolverInterface
         WishlistResolver $wishlistResolver,
         TransportBuilder $transportBuilder,
         StoreManagerInterface $storeManager,
-        CustomerRepository $customerRepository
+        CustomerRepository $customerRepository,
+        EmailAddress $emailValidator
     ) {
         $this->url = $url;
         $this->escaper = $escaper;
@@ -100,6 +109,7 @@ class ShareWishlist implements ResolverInterface
         $this->wishlistResolver = $wishlistResolver;
         $this->transportBuilder = $transportBuilder;
         $this->customerRepository = $customerRepository;
+        $this->emailValidator = $emailValidator;
     }
 
     /**
@@ -145,7 +155,7 @@ class ShareWishlist implements ResolverInterface
                     continue;
                 }
 
-                if (!\Zend_Validate::is($email, \Magento\Framework\Validator\EmailAddress::class)) {
+                if (!$this->emailValidator->isValid($email)) {
                     throw new GraphQlInputException(__('Provided emails are not valid'));
                 }
 
