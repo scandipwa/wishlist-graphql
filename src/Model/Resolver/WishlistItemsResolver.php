@@ -182,7 +182,8 @@ class WishlistItemsResolver implements ResolverInterface
 
         /** @var Wishlist $wishlist */
         $wishlist = $value['model'];
-        $wishlistItems = $this->getWishListItems($wishlist);
+        $wishlistCollection = $this->getWishlistCollection($wishlist, $args);
+        $wishlistItems = $wishlistCollection->getItems();
         $itemProductIds = [];
 
         foreach ($wishlistItems as $item) {
@@ -225,13 +226,20 @@ class WishlistItemsResolver implements ResolverInterface
                 'buy_request' => $buyRequestOption->getValue() ?? '',
                 'description' => $wishlistItem->getDescription(),
                 'added_at' => $wishlistItem->getAddedAt(),
-                'model' => $wishlistItem,
+                'model' => $product,
                 'product' => $itemProduct,
                 'options' => $options
             ];
         }
 
-        return $data;
+        return [
+            'items' => $data,
+            'page_info' => [
+                'current_page' => $wishlistCollection->getCurPage(),
+                'page_size' => $wishlistCollection->getPageSize(),
+                'total_pages' => $wishlistCollection->getLastPageNumber()
+            ]
+        ];
     }
 
     /**
@@ -313,10 +321,14 @@ class WishlistItemsResolver implements ResolverInterface
         $collection = $this->collectionFactory->create();
         $collection->addIdFilter(array_values($itemProductIds));
 
+        $itemsNode = array_filter(iterator_to_array($info->fieldNodes), function ($node) {
+            return $node->name->value === 'items_v2';
+        })[0];
+
         $this->collectionProcessor->process(
             $collection,
             $this->searchCriteriaBuilder->create(),
-            $this->getFieldsFromProductInfo($info, 'items/product')
+            $this->getFieldsFromProductInfo($itemsNode, 'items/product')
         );
 
         $items = $collection->getItems();
@@ -324,19 +336,24 @@ class WishlistItemsResolver implements ResolverInterface
         return $this->productPostProcessor->process(
             $items,
             'items/product',
-            $info
+            $itemsNode
         );
     }
 
     /**
-     * Get wish-list items
+     * Get wishlist items collection
      *
      * @param Wishlist $wishlist
-     * @return Item[]
+     * @param array $args
+     * @return \Magento\Wishlist\Model\ResourceModel\Item\Collection
      */
-    protected function getWishListItems(
-        Wishlist $wishlist
-    ): array {
+    protected function getWishlistCollection(
+        Wishlist $wishlist,
+        array $args
+    ): WishlistItemCollection {
+        $currentPage = $args['currentPage'] ?? 1;
+        $pageSize = $args['pageSize'] ?? 20;
+
         /** @var WishlistItemCollection $collection */
         $collection = $this->wishlistItemsFactory->create();
         $collection
@@ -346,7 +363,15 @@ class WishlistItemsResolver implements ResolverInterface
             }, $this->storeManager->getStores()))
             ->setVisibilityFilter();
 
-        return $collection->getItems();
+        if ($currentPage > 0) {
+            $collection->setCurPage($currentPage);
+        }
+
+        if ($pageSize > 0) {
+            $collection->setPageSize($pageSize);
+        }
+
+        return $collection;
     }
 
     /**
